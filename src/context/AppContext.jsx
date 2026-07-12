@@ -2,341 +2,7 @@ import React, { createContext, useState, useEffect } from 'react';
 
 export const AppContext = createContext();
 
-const initialUsers = [
-  {
-    name: "Alex Chen",
-    email: "admin@assetflow.com",
-    role: "Admin",
-    level: "Admin Level 4",
-    status: "Active",
-    avatarBg: "bg-blue-100 text-blue-700",
-    initials: "AC",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuCDVcYJhqsZNEQxCrb5gnButF_ZH9EYvtsY-nIMDyrmgBop5CQ1AGcJkU3Qo6hQPztocCC4MXN2w7eBvW9pPeLlxFBxWreZPZXTX0WMJh5el6TAIFCXnjeXSRR6kU5H-t5qqR9yk_RN5cFq5w5jD5uvUeOm_TSVDSBqKMS7OHkyFhnLuWkiF55htV9pzJ1M6BNwVpcb8l4u7Mg6LWUP917WavGePBqAHMwrGY5MFAQ3LM7VbUcbX3Dmwniw2GOA9WuvWsJGwvYdYClC"
-  },
-  {
-    name: "Sarah Jenkins",
-    email: "manager@assetflow.com",
-    role: "Asset Manager",
-    level: "Manager Level 3",
-    status: "Active",
-    avatarBg: "bg-purple-100 text-purple-700",
-    initials: "SJ",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuAQCEJZ_t_uWP7pTvdWsDXTxu5coFrnNC0NOoyyV40Pv24D-HML9_JJAQVdudsfcBbqhbpagRElC4FO8z5Z2y-PBL-wtWYsUGEjmFRYGujoAZYrp70dr6-K8IGzJPelNNzxWU9pJnyeDR9so7j6IGZVrW-iygliCtknMFdfveLkiSuABAyGlZpqi4uAItsfm171F9i1uWUu8fo8Aj-_1-9LeWQ69vlkxSefgN6FX-3pKiJaeXZjQD9uGb1Z3cZ7POodIaF2uW7GuHeu"
-  },
-  {
-    name: "David Miller",
-    email: "head@assetflow.com",
-    role: "Department Head",
-    level: "Dept Head Level 3",
-    status: "Active",
-    avatarBg: "bg-green-100 text-green-700",
-    initials: "DM",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBDpSMRQpmFl8CMwb0DmB5UoRkUSgqZrQFR__FXJCep5YKKxTb9UWrGwYS0pYvSwcpxS_Sek_M3S0DToclejPgIAGqyv7sYS3E3yQH7wj45HZCH8ZTzUyiZwWc1qNSR-IxzLHZdiDNOnrVvsXL8UrVHKZfsAjkcDHUxTsucRgI_HbMncHJmmd0t3orcUTE_rXZJbwep_LL-CPKYHQxG7zoqMTpvEIJe3H7ItD_5zGpS0lgXGfGjI7awzwiITS0dJ6F2jIy-3P8gSJJz"
-  },
-  {
-    name: "John Doe",
-    email: "employee@assetflow.com",
-    role: "Employee",
-    level: "Employee Level 1",
-    status: "Active",
-    avatarBg: "bg-orange-100 text-orange-700",
-    initials: "JD",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuCAb3JSNRiEJXx4US2QdyP_t6zJ1IHL-M2I52CZ-a6sQX_XxRl-OlAQJznE_VNZ-Zf6nUCJUJ2R4yx3g1naGO0UAAJF6HTFekb2H6qPzYhcc9blXxsUI1zuaCRJ0jpzz8NzCRJ1LZAsGSX2ex6x3qcBpfID0i-wLkA8XbyNBTDDJJXlzhD16Wthm_m0UNcpIEEiyhiCr-9zXRjKLItZkpIqnYwpmzlNxTIHOzq0hzxekvOdFlDYDqCuac_XZU4z2uDYUjQDxCJh2Ayq"
-  },
-  {
-    name: "Marcus Aurelius",
-    email: "auditor@assetflow.com",
-    role: "Auditor",
-    level: "Auditor Level 2",
-    status: "Active",
-    avatarBg: "bg-indigo-100 text-indigo-700",
-    initials: "MA",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuCcHri9CVf91h3BK_jWa5P7tg0tfZ2fow-YUWa1wuCAsJ0xZOgsfogfTISk6rKWfGiVI4sRIfh4mZlhsSjKetjdHW50ZcqAHX_8rYn9oVrcbRJPMfpFJFnRJEW6QQaMYt7Jbz_dWpAUyLmAw3XGsiZK86SUZA5su71siWAQuKEa6BYLps0PQfgmnnlMRajOD-d0rNCPKi-EhXvm-NRflzrKJ2e_JvgPsyxswSLRTzN_gLNCJLhTe_1eMQ21ZkJNFXSf0Exljd7YkC2K"
-  },
-  {
-    name: "Maria Garcia",
-    email: "viewer@assetflow.com",
-    role: "Viewer",
-    level: "Viewer Level 1",
-    status: "Active",
-    avatarBg: "bg-gray-100 text-gray-700",
-    initials: "MG",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuAsRBkQCGaGSTbbFSn_XaIt26fMidzPF-vEwqv7E_GuYPZEcpZ93VTOwDv6GQociVph6KfXBy81N0RO8p4ivvNJKwBa-1ctjUuwFYPZnhpZ96so6QlxBDTgO1U1KGILqjTW8yl87MsCoSrZLO-2PkAO6vSZYKFvg1-MjFx6UkDqY17MPl7coEn8ICAw3VkxOnYr0pPz7N6LSq7xxpgbr-KVDU48Bd7LgvOs_O_p40nHT7-uw4n9UaD_2zkbDtc990GZ9z596FADewsK"
-  }
-];
-
-const initialAssets = [
-  {
-    id: "ASSET-8291",
-    name: "MacBook Pro M3 Max - 16\"",
-    category: "IT Equipment",
-    status: "Active",
-    assignedTo: "Sarah Jenkins",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuAQCEJZ_t_uWP7pTvdWsDXTxu5coFrnNC0NOoyyV40Pv24D-HML9_JJAQVdudsfcBbqhbpagRElC4FO8z5Z2y-PBL-wtWYsUGEjmFRYGujoAZYrp70dr6-K8IGzJPelNNzxWU9pJnyeDR9so7j6IGZVrW-iygliCtknMFdfveLkiSuABAyGlZpqi4uAItsfm171F9i1uWUu8fo8Aj-_1-9LeWQ69vlkxSefgN6FX-3pKiJaeXZjQD9uGb1Z3cZ7POodIaF2uW7GuHeu",
-    lastAudit: "Oct 12, 2023",
-    serialNumber: "SN82910382",
-    barcode: "BAR-8291",
-    qrCode: "QR-8291",
-    purchaseDate: "2023-01-15",
-    purchaseCost: "3499.00",
-    vendor: "Apple Business",
-    warranty: "2026-01-15",
-    location: "San Francisco HQ",
-    department: "Software Engineering",
-    condition: "Excellent",
-    bookable: true,
-    customValues: { "RAM (GB)": "64", "Storage": "2TB SSD" }
-  },
-  {
-    id: "ASSET-4412",
-    name: "Dell UltraSharp 32\" 4K",
-    category: "IT Equipment",
-    status: "Maintenance",
-    assignedTo: "Main Office - R4",
-    avatar: "MT",
-    lastAudit: "Nov 05, 2023",
-    serialNumber: "SNDEL4412",
-    barcode: "BAR-4412",
-    qrCode: "QR-4412",
-    purchaseDate: "2022-08-10",
-    purchaseCost: "899.00",
-    vendor: "Dell Direct",
-    warranty: "2025-08-10",
-    location: "Austin Office",
-    department: "IT Infrastructure",
-    condition: "Good",
-    bookable: true,
-    customValues: { "RAM (GB)": "0", "Storage": "N/A" }
-  },
-  {
-    id: "ASSET-9003",
-    name: "Tesla Model 3 - Fleet ID 44",
-    category: "Vehicles",
-    status: "Active",
-    assignedTo: "David Miller",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBDpSMRQpmFl8CMwb0DmB5UoRkUSgqZrQFR__FXJCep5YKKxTb9UWrGwYS0pYvSwcpxS_Sek_M3S0DToclejPgIAGqyv7sYS3E3yQH7wj45HZCH8ZTzUyiZwWc1qNSR-IxzLHZdiDNOnrVvsXL8UrVHKZfsAjkcDHUxTsucRgI_HbMncHJmmd0t3orcUTE_rXZJbwep_LL-CPKYHQxG7zoqMTpvEIJe3H7ItD_5zGpS0lgXGfGjI7awzwiITS0dJ6F2jIy-3P8gSJJz",
-    lastAudit: "Jan 14, 2024",
-    serialNumber: "5YJ3E1EA5LF000000",
-    barcode: "BAR-9003",
-    qrCode: "QR-9003",
-    purchaseDate: "2021-04-18",
-    purchaseCost: "42000.00",
-    vendor: "Tesla Inc.",
-    warranty: "2025-04-18",
-    location: "Fleet Garage B",
-    department: "IT Infrastructure",
-    condition: "Good",
-    bookable: true,
-    customValues: { "License Plate": "CA-9003", "Odometer Reading": "34210" }
-  },
-  {
-    id: "ASSET-1224",
-    name: "Ergonomic Task Chair V2",
-    category: "Office Furniture",
-    status: "Decommissioned",
-    assignedTo: "Unassigned",
-    avatar: "",
-    lastAudit: "Dec 20, 2023",
-    serialNumber: "SNCH-1224",
-    barcode: "BAR-1224",
-    qrCode: "QR-1224",
-    purchaseDate: "2020-03-11",
-    purchaseCost: "450.00",
-    vendor: "Steelcase Office",
-    warranty: "2025-03-11",
-    location: "San Francisco HQ",
-    department: "Human Resources",
-    condition: "Fair",
-    bookable: false,
-    customValues: { "Material": "Mesh" }
-  },
-  {
-    id: "ASSET-5561",
-    name: "Network Switch Cisco 48p",
-    category: "IT Equipment",
-    status: "Active",
-    assignedTo: "Server Room 2",
-    avatar: "IT",
-    lastAudit: "Jan 02, 2024",
-    serialNumber: "SNCS-5561",
-    barcode: "BAR-5561",
-    qrCode: "QR-5561",
-    purchaseDate: "2023-05-22",
-    purchaseCost: "1850.00",
-    vendor: "CDW Gov",
-    warranty: "2028-05-22",
-    location: "Server Room 2",
-    department: "IT Infrastructure",
-    condition: "Excellent",
-    bookable: false,
-    customValues: { "RAM (GB)": "16", "Storage": "N/A" }
-  }
-];
-
-const initialTickets = [
-  {
-    id: "#AX-2091",
-    title: "HVAC Unit 4 Filter Replacement",
-    priority: "High",
-    progress: 0,
-    status: "Backlog",
-    assignedTo: "Unassigned",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuCAb3JSNRiEJXx4US2QdyP_t6zJ1IHL-M2I52CZ-a6sQX_XxRl-OlAQJznE_VNZ-Zf6nUCJUJ2R4yx3g1naGO0UAAJF6HTFekb2H6qPzYhcc9blXxsUI1zuaCRJ0jpzz8NzCRJ1LZAsGSX2ex6x3qcBpfID0i-wLkA8XbyNBTDDJJXlzhD16Wthm_m0UNcpIEEiyhiCr-9zXRjKLItZkpIqnYwpmzlNxTIHOzq0hzxekvOdFlDYDqCuac_XZU4z2uDYUjQDxCJh2Ayq",
-    due: "Due in 3 days",
-    comments: [],
-    laborHours: 2,
-    estimatedCost: 120,
-    actualCost: 0,
-    attachments: [],
-    resolutionNotes: ""
-  },
-  {
-    id: "#AX-2104",
-    title: "Conveyor Belt Lubrication Zone B",
-    priority: "Medium",
-    progress: 10,
-    status: "Backlog",
-    assignedTo: "Jordan S.",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuCvcxSu8csAbk__qE1BoDdSs2YFHC6AHgmung7MxlwOHQWilTBFc6aDlZd-JgGVMDXJV9fTBQzh90C7P3W3jYGt33BzVlirlwABSCQRYHK9z07Wce2586uTfDuVpw4qhEC1oAZB9gT8uSOys3Xwiu6egSv75jnLkTHyOTUbKwiGLUaQjQbgaLkmXkT9ACgkh1HL-rUByXDeCLJqYxmrwYuwRsmFRk2_knFT2iYWraKnfu6mWh0vEVyA-AcCj2tUvc3OoIhFNKofOKUn",
-    due: "Due in 5 days",
-    comments: [],
-    laborHours: 4,
-    estimatedCost: 250,
-    actualCost: 0,
-    attachments: [],
-    resolutionNotes: ""
-  },
-  {
-    id: "#AX-1988",
-    title: "Server Rack 12 Power Supply Issue",
-    priority: "High",
-    progress: 65,
-    status: "In Progress",
-    assignedTo: "Alex Rivera",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuBweA6PiS5AXIJ8Et1UyCMN41SnB6bl3OPVNvJt6o0MY16aSSl-4BWoeSnEhQgMJ3f8GINfHKReDt4Gq8LLxhRhdR2_0kGnXML--ecDDPtn36TpIapvSz822d5XGjCj80m2yoFOrabw2lC98QaXRx5dL5icpzW4ezWVoNdJmtiMCJa3bvQS13QSdhHnl7ztDrqvCh3LFNLX6bsJuXVSMZSQyhXU23LBJMuqsdmg9NqTLzxzsa6MKzYANPi0zG-SP_D-lfqkJcrpuu3e",
-    due: "Due Today",
-    comments: [
-      { author: "Alex Rivera", text: "Ordered replacement power supply module.", date: "Today, 9:30 AM" },
-      { author: "Sarah Jenkins", text: "Please expedite, this is critical.", date: "Today, 10:15 AM" }
-    ],
-    laborHours: 1.5,
-    estimatedCost: 300,
-    actualCost: 0,
-    attachments: [],
-    resolutionNotes: ""
-  },
-  {
-    id: "#AX-2044",
-    title: "Hydraulic Leak Detection - Forklift F2",
-    priority: "Medium",
-    progress: 25,
-    status: "In Progress",
-    assignedTo: "Sam Chen",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuD48KO0D4VAPfLXArC6JB7hwCA2eW1i6iaFcyAFcWX72joMxvJaV6sHaClw2O4RlKlqZn0FLT-9Q2YnmqdFg8rOOwmyVvLcBK-0BJkYO5XiUsdfjaWX2_I18rCLD0T-X05aW1h9fgA2zUo7t-k1pFQXz4mNQwWvErtPIxJywAXofueOfgqlryWzd_2CrKmScobDbLTa6KIal2vAIoQJeGu-8xFLrhL_CgQircS3Sz_xCIXM9_IT4bkSf3IU_oSO1PbQDH5UWNr0QjZp",
-    due: "Due in 2 days",
-    comments: [],
-    laborHours: 5,
-    estimatedCost: 500,
-    actualCost: 0,
-    attachments: [],
-    resolutionNotes: ""
-  },
-  {
-    id: "#AX-2110",
-    title: "Emergency Light Testing - Wing C",
-    priority: "Low",
-    progress: 100,
-    status: "Review",
-    assignedTo: "Maria G.",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuCcHri9CVf91h3BK_jWa5P7tg0tfZ2fow-YUWa1wuCAsJ0xZOgsfogfTISk6rKWfGiVI4sRIfh4mZlhsSjKetjdHW50ZcqAHX_8rYn9oVrcbRJPMfpFJFnRJEW6QQaMYt7Jbz_dWpAUyLmAw3XGsiZK86SUZA5su71siWAQuKEa6BYLps0PQfgmnnlMRajOD-d0rNCPKi-EhXvm-NRflzrKJ2e_JvgPsyxswSLRTzN_gLNCJLhTe_1eMQ21ZkJNFXSf0Exljd7YkC2K",
-    due: "Ready",
-    comments: [],
-    laborHours: 1,
-    estimatedCost: 50,
-    actualCost: 45,
-    attachments: [],
-    resolutionNotes: "All bulbs tested and operational."
-  },
-  {
-    id: "#AX-1822",
-    title: "Generator Weekly Test - Standby Power",
-    priority: "Done",
-    progress: 100,
-    status: "Completed",
-    assignedTo: "Sam Chen",
-    avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuAsRBkQCGaGSTbbFSn_XaIt26fMidzPF-vEwqv7E_GuYPZEcpZ93VTOwDv6GQociVph6KfXBy81N0RO8p4ivvNJKwBa-1ctjUuwFYPZnhpZ96so6QlxBDTgO1U1KGILqjTW8yl87MsCoSrZLO-2PkAO6vSZYKFvg1-MjFx6UkDqY17MPl7coEn8ICAw3VkxOnYr0pPz7N6LSq7xxpgbr-KVDU48Bd7LgvOs_O_p40nHT7-uw4n9UaD_2zkbDtc990GZ9z596FADewsK",
-    due: "Done",
-    comments: [{ author: "Sam Chen", text: "Completed testing, normal outputs.", date: "Last week" }],
-    laborHours: 1,
-    estimatedCost: 100,
-    actualCost: 100,
-    attachments: [],
-    resolutionNotes: "Normal weekly test complete."
-  }
-];
-
-const initialDepartments = [
-  { id: "DEP-1", name: "IT Infrastructure", code: "IT-INF", parentDepartment: "None", manager: "Alex Chen", status: "Active" },
-  { id: "DEP-2", name: "Software Engineering", code: "SWE", parentDepartment: "IT Infrastructure", manager: "Sarah Jenkins", status: "Active" },
-  { id: "DEP-3", name: "Human Resources", code: "HR", parentDepartment: "None", manager: "Maria Garcia", status: "Active" },
-  { id: "DEP-4", name: "Finance", code: "FIN", parentDepartment: "None", manager: "Sarah Jenkins", status: "Inactive" }
-];
-
-const initialCategories = [
-  { id: "CAT-1", name: "IT Equipment", code: "ITE", customFields: [{ name: "RAM (GB)", type: "number", required: true }, { name: "Storage", type: "text", required: false }] },
-  { id: "CAT-2", name: "Vehicles", code: "VEH", customFields: [{ name: "License Plate", type: "text", required: true }, { name: "Odometer Reading", type: "number", required: true }] },
-  { id: "CAT-3", name: "Office Furniture", code: "OFN", customFields: [{ name: "Material", type: "text", required: false }] }
-];
-
-const initialAllocations = [
-  { id: "ALC-1", assetId: "ASSET-8291", assetName: "MacBook Pro M3 Max - 16\"", employeeId: "manager@assetflow.com", employeeName: "Sarah Jenkins", department: "Software Engineering", checkoutDate: "2026-06-01", expectedReturn: "2026-12-01", actualReturn: null, checkoutCondition: "New", checkinCondition: null, checkoutNotes: "Assigned for development work", status: "Active", rejectReason: "" },
-  { id: "ALC-2", assetId: "ASSET-9003", assetName: "Tesla Model 3 - Fleet ID 44", employeeId: "head@assetflow.com", employeeName: "David Miller", department: "IT Infrastructure", checkoutDate: "2026-05-10", expectedReturn: "2026-07-10", actualReturn: null, checkoutCondition: "Good", checkinCondition: null, checkoutNotes: "Business trip assignment", status: "Overdue", rejectReason: "" }
-];
-
-const initialBookings = [
-  { id: "BKG-1", resourceName: "Conference Room Alpha", resourceId: "CONF-A", employeeId: "admin@assetflow.com", employeeName: "Alex Chen", startDate: "2026-07-13T10:00:00", endDate: "2026-07-13T11:00:00", recurrence: "None", reminderMinutes: 15, status: "Upcoming" },
-  { id: "BKG-2", resourceName: "Tesla Model 3 - Fleet ID 44", resourceId: "ASSET-9003", employeeId: "manager@assetflow.com", employeeName: "Sarah Jenkins", startDate: "2026-07-14T09:00:00", endDate: "2026-07-14T17:00:00", recurrence: "None", reminderMinutes: 30, status: "Upcoming" }
-];
-
-const initialAudits = [
-  {
-    id: "AUD-1",
-    cycleName: "Mid-Year H1 2026 IT Audit",
-    startDate: "2026-06-01",
-    endDate: "2026-06-30",
-    status: "Completed",
-    department: "IT Infrastructure",
-    items: [
-      { assetId: "ASSET-8291", assetName: "MacBook Pro M3 Max - 16\"", verified: true, condition: "Excellent", remarks: "Verified physically" },
-      { assetId: "ASSET-4412", assetName: "Dell UltraSharp 32\" 4K", verified: true, condition: "Good", remarks: "In office R4" }
-    ],
-    timeline: [
-      { date: "2026-06-01", event: "Audit Cycle Initiated" },
-      { date: "2026-06-25", event: "All Assets Verified" },
-      { date: "2026-06-30", event: "Audit Completed & Signed Off" }
-    ]
-  },
-  {
-    id: "AUD-2",
-    cycleName: "Q3 Equipment Verification",
-    startDate: "2026-07-01",
-    endDate: "2026-07-31",
-    status: "In Progress",
-    department: "Software Engineering",
-    items: [
-      { assetId: "ASSET-1224", assetName: "Ergonomic Task Chair V2", verified: false, condition: "Needs Replacement", remarks: "Found broken armrest" }
-    ],
-    timeline: [
-      { date: "2026-07-01", event: "Audit Cycle Initiated" }
-    ]
-  }
-];
-
-const initialNotifications = [
-  { id: "N-1", title: "Audit Required", message: "Mid-Year H1 2026 IT Audit cycle is ending soon. Please complete all verifications.", type: "warning", timestamp: "10 mins ago", read: false },
-  { id: "N-2", title: "New Asset Allocation", message: "Tesla Model 3 - Fleet ID 44 has been allocated to Sarah Jenkins.", type: "success", timestamp: "1 hour ago", read: false },
-  { id: "N-3", title: "Maintenance Alert", message: "Conveyor Belt Lubrication maintenance task is due today.", type: "info", timestamp: "2 hours ago", read: true }
-];
+const API_BASE = 'http://localhost:5050/api';
 
 export const AppProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
@@ -344,50 +10,17 @@ export const AppProvider = ({ children }) => {
     return savedUser ? JSON.parse(savedUser) : null;
   });
 
-  const [users, setUsers] = useState(() => {
-    const savedUsers = localStorage.getItem('assetflow_users');
-    return savedUsers ? JSON.parse(savedUsers) : initialUsers;
-  });
+  const [token, setToken] = useState(() => localStorage.getItem('assetflow_token') || null);
 
-  const [assets, setAssets] = useState(() => {
-    const savedAssets = localStorage.getItem('assetflow_assets');
-    return savedAssets ? JSON.parse(savedAssets) : initialAssets;
-  });
-
-  const [tickets, setTickets] = useState(() => {
-    const savedTickets = localStorage.getItem('assetflow_tickets');
-    return savedTickets ? JSON.parse(savedTickets) : initialTickets;
-  });
-
-  const [departments, setDepartments] = useState(() => {
-    const savedDepts = localStorage.getItem('assetflow_departments');
-    return savedDepts ? JSON.parse(savedDepts) : initialDepartments;
-  });
-
-  const [categories, setCategories] = useState(() => {
-    const savedCats = localStorage.getItem('assetflow_categories');
-    return savedCats ? JSON.parse(savedCats) : initialCategories;
-  });
-
-  const [allocations, setAllocations] = useState(() => {
-    const savedAllocations = localStorage.getItem('assetflow_allocations');
-    return savedAllocations ? JSON.parse(savedAllocations) : initialAllocations;
-  });
-
-  const [bookings, setBookings] = useState(() => {
-    const savedBookings = localStorage.getItem('assetflow_bookings');
-    return savedBookings ? JSON.parse(savedBookings) : initialBookings;
-  });
-
-  const [audits, setAudits] = useState(() => {
-    const savedAudits = localStorage.getItem('assetflow_audits');
-    return savedAudits ? JSON.parse(savedAudits) : initialAudits;
-  });
-
-  const [notifications, setNotifications] = useState(() => {
-    const savedNotifs = localStorage.getItem('assetflow_notifications');
-    return savedNotifs ? JSON.parse(savedNotifs) : initialNotifications;
-  });
+  const [users, setUsers] = useState([]);
+  const [assets, setAssets] = useState([]);
+  const [tickets, setTickets] = useState([]);
+  const [departments, setDepartments] = useState([]);
+  const [categories, setCategories] = useState([]);
+  const [allocations, setAllocations] = useState([]);
+  const [bookings, setBookings] = useState([]);
+  const [audits, setAudits] = useState([]);
+  const [notifications, setNotifications] = useState([]);
 
   const [favorites, setFavorites] = useState(() => {
     const savedFavs = localStorage.getItem('assetflow_favorites');
@@ -409,6 +42,15 @@ export const AppProvider = ({ children }) => {
 
   const [searchQuery, setSearchQuery] = useState("");
 
+  // Save token and user to localStorage
+  useEffect(() => {
+    if (token) {
+      localStorage.setItem('assetflow_token', token);
+    } else {
+      localStorage.removeItem('assetflow_token');
+    }
+  }, [token]);
+
   useEffect(() => {
     if (user) {
       localStorage.setItem('assetflow_user', JSON.stringify(user));
@@ -417,42 +59,7 @@ export const AppProvider = ({ children }) => {
     }
   }, [user]);
 
-  useEffect(() => {
-    localStorage.setItem('assetflow_users', JSON.stringify(users));
-  }, [users]);
-
-  useEffect(() => {
-    localStorage.setItem('assetflow_assets', JSON.stringify(assets));
-  }, [assets]);
-
-  useEffect(() => {
-    localStorage.setItem('assetflow_tickets', JSON.stringify(tickets));
-  }, [tickets]);
-
-  useEffect(() => {
-    localStorage.setItem('assetflow_departments', JSON.stringify(departments));
-  }, [departments]);
-
-  useEffect(() => {
-    localStorage.setItem('assetflow_categories', JSON.stringify(categories));
-  }, [categories]);
-
-  useEffect(() => {
-    localStorage.setItem('assetflow_allocations', JSON.stringify(allocations));
-  }, [allocations]);
-
-  useEffect(() => {
-    localStorage.setItem('assetflow_bookings', JSON.stringify(bookings));
-  }, [bookings]);
-
-  useEffect(() => {
-    localStorage.setItem('assetflow_audits', JSON.stringify(audits));
-  }, [audits]);
-
-  useEffect(() => {
-    localStorage.setItem('assetflow_notifications', JSON.stringify(notifications));
-  }, [notifications]);
-
+  // Save UI local preferences to localStorage
   useEffect(() => {
     localStorage.setItem('assetflow_favorites', JSON.stringify(favorites));
   }, [favorites]);
@@ -475,102 +82,211 @@ export const AppProvider = ({ children }) => {
     localStorage.setItem('themeColor', themeColor);
   }, [themeColor]);
 
-  // Auth Operations
-  const login = (email, password) => {
-    const foundUser = users.find(u => u.email.toLowerCase() === email.toLowerCase());
-    if (foundUser) {
-      setUser(foundUser);
-      return true;
-    }
-    // Fallback automatic login for simple testing using any role email
-    const rolesMap = {
-      'admin@assetflow.com': 'Admin',
-      'manager@assetflow.com': 'Asset Manager',
-      'head@assetflow.com': 'Department Head',
-      'employee@assetflow.com': 'Employee',
-      'auditor@assetflow.com': 'Auditor',
-      'viewer@assetflow.com': 'Viewer'
+  // Reusable API Fetch Helper
+  const apiCall = async (url, options = {}) => {
+    const currentToken = localStorage.getItem('assetflow_token') || token;
+    const headers = {
+      'Content-Type': 'application/json',
+      ...options.headers
     };
-    const mappedRole = rolesMap[email.toLowerCase()];
-    if (mappedRole) {
-      const newUserObj = {
-        name: email.split('@')[0].split('.').map(s => s.charAt(0).toUpperCase() + s.slice(1)).join(' '),
-        email: email,
-        role: mappedRole,
-        level: `${mappedRole} Level ${mappedRole === 'Admin' ? '4' : '2'}`,
-        status: "Active",
-        avatarBg: "bg-blue-100 text-blue-700",
-        initials: email.charAt(0).toUpperCase(),
-        avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuCDVcYJhqsZNEQxCrb5gnButF_ZH9EYvtsY-nIMDyrmgBop5CQ1AGcJkU3Qo6hQPztocCC4MXN2w7eBvW9pPeLlxFBxWreZPZXTX0WMJh5el6TAIFCXnjeXSRR6kU5H-t5qqR9yk_RN5cFq5w5jD5uvUeOm_TSVDSBqKMS7OHkyFhnLuWkiF55htV9pzJ1M6BNwVpcb8l4u7Mg6LWUP917WavGePBqAHMwrGY5MFAQ3LM7VbUcbX3Dmwniw2GOA9WuvWsJGwvYdYClC"
-      };
-      setUsers(prev => [...prev, newUserObj]);
-      setUser(newUserObj);
-      return true;
+    if (currentToken) {
+      headers['Authorization'] = `Bearer ${currentToken}`;
     }
-    // If not found and not a special test email, return false
-    return false;
+
+    try {
+      let response = await fetch(`${API_BASE}${url}`, { ...options, headers });
+      
+      // Token Refresh Rotation & Retry logic
+      if (response.status === 401 && url !== '/auth/login' && url !== '/auth/refresh') {
+        const currentRefreshToken = localStorage.getItem('assetflow_refresh_token');
+        if (currentRefreshToken) {
+          try {
+            const refreshRes = await fetch(`${API_BASE}/auth/refresh`, {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({ refreshToken: currentRefreshToken })
+            });
+            if (refreshRes.ok) {
+              const refreshData = await refreshRes.json();
+              localStorage.setItem('assetflow_token', refreshData.token);
+              localStorage.setItem('assetflow_refresh_token', refreshData.refreshToken);
+              setToken(refreshData.token);
+              
+              // Retry original API request with the new access token
+              headers['Authorization'] = `Bearer ${refreshData.token}`;
+              response = await fetch(`${API_BASE}${url}`, { ...options, headers });
+            } else {
+              logout();
+            }
+          } catch (refreshErr) {
+            console.error('Refresh token exchange failed:', refreshErr);
+            logout();
+          }
+        }
+      }
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || `HTTP error! status: ${response.status}`);
+      }
+      return response.json();
+    } catch (err) {
+      console.error(`API Call failed: ${url}`, err);
+      throw err;
+    }
   };
 
-  const signup = (userData) => {
-    const exists = users.some(u => u.email.toLowerCase() === userData.email.toLowerCase());
-    if (exists) return false;
-    const initials = userData.name.split(' ').map(n => n.charAt(0)).join('').toUpperCase();
-    const newUser = {
-      id: `EMP-${Math.floor(1000 + Math.random() * 9000)}`,
-      status: "Active",
-      avatarBg: "bg-blue-100 text-blue-700",
-      initials: initials,
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuCAb3JSNRiEJXx4US2QdyP_t6zJ1IHL-M2I52CZ-a6sQX_XxRl-OlAQJznE_VNZ-Zf6nUCJUJ2R4yx3g1naGO0UAAJF6HTFekb2H6qPzYhcc9blXxsUI1zuaCRJ0jpzz8NzCRJ1LZAsGSX2ex6x3qcBpfID0i-wLkA8XbyNBTDDJJXlzhD16Wthm_m0UNcpIEEiyhiCr-9zXRjKLItZkpIqnYwpmzlNxTIHOzq0hzxekvOdFlDYDqCuac_XZU4z2uDYUjQDxCJh2Ayq",
-      level: `${userData.role} Level 1`,
-      ...userData
-    };
-    setUsers(prev => [...prev, newUser]);
-    return true;
+  // Load all initial data from backend if authenticated
+  const loadBackendData = async () => {
+    try {
+      const [assetsData, ticketsData, deptsData, catsData, allocsData, bookingsData, auditsData, notifsData, empsData] = await Promise.all([
+        apiCall('/assets'),
+        apiCall('/maintenance'),
+        apiCall('/departments'),
+        apiCall('/categories'),
+        apiCall('/allocations'),
+        apiCall('/bookings'),
+        apiCall('/audits'),
+        apiCall('/notifications'),
+        apiCall('/employees')
+      ]);
+
+      setAssets(assetsData);
+      setTickets(ticketsData);
+      setDepartments(deptsData);
+      setCategories(catsData);
+      setAllocations(allocsData);
+      setBookings(bookingsData);
+      setAudits(auditsData);
+      setNotifications(notifsData);
+      setUsers(empsData);
+    } catch (err) {
+      console.error('Failed to pre-load DB registries:', err);
+    }
+  };
+
+  useEffect(() => {
+    if (token) {
+      loadBackendData();
+    }
+  }, [token]);
+
+  // Auth Operations
+  const login = async (email, password) => {
+    try {
+      const result = await apiCall('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({ email, password })
+      });
+
+      if (result.token) {
+        setToken(result.token);
+        localStorage.setItem('assetflow_refresh_token', result.refreshToken);
+        setUser({
+          name: result.user.name,
+          email: result.user.email,
+          role: result.user.role,
+          level: `${result.user.role} Level 1`,
+          status: result.user.status === 'ACTIVE' ? 'Active' : 'Inactive',
+          avatarBg: "bg-blue-100 text-blue-700",
+          initials: result.user.name.split(' ').map(n => n.charAt(0)).join('').toUpperCase()
+        });
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Login error:', error);
+      return false;
+    }
+  };
+
+  const signup = async (userData) => {
+    try {
+      await apiCall('/auth/signup', {
+        method: 'POST',
+        body: JSON.stringify(userData)
+      });
+      // Reload employees list
+      const empsData = await apiCall('/employees');
+      setUsers(empsData);
+      return true;
+    } catch (error) {
+      console.error('Signup error:', error);
+      return false;
+    }
   };
 
   const logout = () => {
+    setToken(null);
     setUser(null);
+    localStorage.removeItem('assetflow_token');
+    localStorage.removeItem('assetflow_refresh_token');
+    localStorage.removeItem('assetflow_user');
   };
 
-  // User Administration Operations
-  const deleteUser = (email) => {
-    setUsers(prev => prev.filter(u => u.email !== email));
+  // User/Employee Administration Operations
+  const deleteUser = async (email) => {
+    try {
+      await apiCall(`/employees/${email}`, { method: 'DELETE' });
+      const empsData = await apiCall('/employees');
+      setUsers(empsData);
+    } catch (error) {
+      console.error('Delete employee error:', error);
+    }
   };
 
-  const updateUser = (email, updatedFields) => {
-    setUsers(prev => prev.map(u => u.email === email ? { ...u, ...updatedFields } : u));
-    if (user && user.email === email) {
-      setUser(prev => ({ ...prev, ...updatedFields }));
+  const updateUser = async (email, updatedFields) => {
+    try {
+      await apiCall(`/employees/${email}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedFields)
+      });
+      const empsData = await apiCall('/employees');
+      setUsers(empsData);
+    } catch (error) {
+      console.error('Update employee error:', error);
     }
   };
 
   // Asset Operations
-  const addAsset = (asset) => {
-    const newId = `ASSET-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newAsset = {
-      id: newId,
-      lastAudit: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' }),
-      serialNumber: asset.serialNumber || `SN-${Math.floor(100000 + Math.random() * 900000)}`,
-      barcode: asset.barcode || `BAR-${newId.split('-')[1]}`,
-      qrCode: asset.qrCode || `QR-${newId.split('-')[1]}`,
-      condition: asset.condition || "New",
-      customValues: asset.customValues || {},
-      status: asset.status || "Active",
-      ...asset
-    };
-    setAssets(prev => [newAsset, ...prev]);
+  const addAsset = async (asset) => {
+    try {
+      await apiCall('/assets', {
+        method: 'POST',
+        body: JSON.stringify(asset)
+      });
+      const assetsData = await apiCall('/assets');
+      setAssets(assetsData);
+    } catch (error) {
+      console.error('Add asset error:', error);
+    }
   };
 
-  const updateAsset = (id, updatedFields) => {
-    setAssets(prev => prev.map(asset => asset.id === id ? { ...asset, ...updatedFields } : asset));
+  const updateAsset = async (id, updatedFields) => {
+    try {
+      await apiCall(`/assets/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedFields)
+      });
+      const assetsData = await apiCall('/assets');
+      setAssets(assetsData);
+    } catch (error) {
+      console.error('Update asset error:', error);
+    }
   };
 
-  const deleteAsset = (id) => {
-    setAssets(prev => prev.filter(asset => asset.id !== id));
+  const deleteAsset = async (id) => {
+    try {
+      await apiCall(`/assets/${id}`, { method: 'DELETE' });
+      const assetsData = await apiCall('/assets');
+      setAssets(assetsData);
+    } catch (error) {
+      console.error('Delete asset error:', error);
+    }
   };
 
-  const updateAssetStatus = (id, status) => {
-    updateAsset(id, { status });
+  const updateAssetStatus = async (id, status) => {
+    await updateAsset(id, { status });
   };
 
   const toggleFavoriteAsset = (assetId) => {
@@ -586,136 +302,251 @@ export const AppProvider = ({ children }) => {
   };
 
   // Department Operations
-  const addDepartment = (dept) => {
-    const newId = `DEP-${Math.floor(100 + Math.random() * 900)}`;
-    const newDept = { id: newId, ...dept };
-    setDepartments(prev => [...prev, newDept]);
+  const addDepartment = async (dept) => {
+    try {
+      await apiCall('/departments', {
+        method: 'POST',
+        body: JSON.stringify(dept)
+      });
+      const deptsData = await apiCall('/departments');
+      setDepartments(deptsData);
+    } catch (error) {
+      console.error('Add department error:', error);
+    }
   };
 
-  const updateDepartment = (id, updatedFields) => {
-    setDepartments(prev => prev.map(d => d.id === id ? { ...d, ...updatedFields } : d));
+  const updateDepartment = async (id, updatedFields) => {
+    try {
+      await apiCall(`/departments/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedFields)
+      });
+      const deptsData = await apiCall('/departments');
+      setDepartments(deptsData);
+    } catch (error) {
+      console.error('Update department error:', error);
+    }
   };
 
-  const deleteDepartment = (id) => {
-    setDepartments(prev => prev.filter(d => d.id !== id));
+  const deleteDepartment = async (id) => {
+    try {
+      await apiCall(`/departments/${id}`, { method: 'DELETE' });
+      const deptsData = await apiCall('/departments');
+      setDepartments(deptsData);
+    } catch (error) {
+      console.error('Delete department error:', error);
+    }
   };
 
   // Category Operations
-  const addCategory = (cat) => {
-    const newId = `CAT-${Math.floor(100 + Math.random() * 900)}`;
-    const newCat = { id: newId, ...cat };
-    setCategories(prev => [...prev, newCat]);
+  const addCategory = async (cat) => {
+    try {
+      await apiCall('/categories', {
+        method: 'POST',
+        body: JSON.stringify(cat)
+      });
+      const catsData = await apiCall('/categories');
+      setCategories(catsData);
+    } catch (error) {
+      console.error('Add category error:', error);
+    }
   };
 
-  const updateCategory = (id, updatedFields) => {
-    setCategories(prev => prev.map(c => c.id === id ? { ...c, ...updatedFields } : c));
+  const updateCategory = async (id, updatedFields) => {
+    try {
+      await apiCall(`/categories/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedFields)
+      });
+      const catsData = await apiCall('/categories');
+      setCategories(catsData);
+    } catch (error) {
+      console.error('Update category error:', error);
+    }
   };
 
-  const deleteCategory = (id) => {
-    setCategories(prev => prev.filter(c => c.id !== id));
+  const deleteCategory = async (id) => {
+    try {
+      await apiCall(`/categories/${id}`, { method: 'DELETE' });
+      const catsData = await apiCall('/categories');
+      setCategories(catsData);
+    } catch (error) {
+      console.error('Delete category error:', error);
+    }
   };
 
   // Allocation Operations
-  const addAllocation = (alloc) => {
-    const newId = `ALC-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newAlloc = { id: newId, status: "Active", actualReturn: null, rejectReason: "", ...alloc };
-    setAllocations(prev => [newAlloc, ...prev]);
+  const addAllocation = async (alloc) => {
+    try {
+      await apiCall('/allocations', {
+        method: 'POST',
+        body: JSON.stringify(alloc)
+      });
+      const [allocsData, assetsData] = await Promise.all([
+        apiCall('/allocations'),
+        apiCall('/assets')
+      ]);
+      setAllocations(allocsData);
+      setAssets(assetsData);
+    } catch (error) {
+      console.error('Add allocation error:', error);
+    }
   };
 
-  const updateAllocation = (id, updatedFields) => {
-    setAllocations(prev => prev.map(a => a.id === id ? { ...a, ...updatedFields } : a));
+  const updateAllocation = async (id, updatedFields) => {
+    try {
+      if (updatedFields.status === 'Returned' || updatedFields.actualReturn) {
+        await apiCall(`/allocations/${id}/return`, {
+          method: 'POST',
+          body: JSON.stringify({
+            actualReturn: updatedFields.actualReturn,
+            checkinCondition: updatedFields.checkinCondition,
+            checkinNotes: updatedFields.checkinNotes
+          })
+        });
+      }
+      const [allocsData, assetsData] = await Promise.all([
+        apiCall('/allocations'),
+        apiCall('/assets')
+      ]);
+      setAllocations(allocsData);
+      setAssets(assetsData);
+    } catch (error) {
+      console.error('Update allocation error:', error);
+    }
   };
 
   // Booking Operations
-  const addBooking = (bkg) => {
-    const newId = `BKG-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newBkg = { id: newId, status: "Upcoming", ...bkg };
-    setBookings(prev => [newBkg, ...prev]);
+  const addBooking = async (bkg) => {
+    try {
+      await apiCall('/bookings', {
+        method: 'POST',
+        body: JSON.stringify(bkg)
+      });
+      const bookingsData = await apiCall('/bookings');
+      setBookings(bookingsData);
+    } catch (error) {
+      console.error('Add booking error:', error);
+    }
   };
 
-  const updateBooking = (id, updatedFields) => {
-    setBookings(prev => prev.map(b => b.id === id ? { ...b, ...updatedFields } : b));
+  const updateBooking = async (id, updatedFields) => {
+    try {
+      if (updatedFields.status === 'Cancelled') {
+        await apiCall(`/bookings/${id}/cancel`, { method: 'POST' });
+      }
+      const bookingsData = await apiCall('/bookings');
+      setBookings(bookingsData);
+    } catch (error) {
+      console.error('Update booking error:', error);
+    }
   };
 
   // Ticket (Maintenance) Operations
-  const addTicket = (ticket) => {
-    const newId = `#AX-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newTicket = {
-      id: newId,
-      progress: 0,
-      due: "Due in 3 days",
-      comments: [],
-      laborHours: 0,
-      estimatedCost: 0,
-      actualCost: 0,
-      attachments: [],
-      resolutionNotes: "",
-      avatar: "https://lh3.googleusercontent.com/aida-public/AB6AXuCAb3JSNRiEJXx4US2QdyP_t6zJ1IHL-M2I52CZ-a6sQX_XxRl-OlAQJznE_VNZ-Zf6nUCJUJ2R4yx3g1naGO0UAAJF6HTFekb2H6qPzYhcc9blXxsUI1zuaCRJ0jpzz8NzCRJ1LZAsGSX2ex6x3qcBpfID0i-wLkA8XbyNBTDDJJXlzhD16Wthm_m0UNcpIEEiyhiCr-9zXRjKLItZkpIqnYwpmzlNxTIHOzq0hzxekvOdFlDYDqCuac_XZU4z2uDYUjQDxCJh2Ayq",
-      ...ticket
-    };
-    setTickets(prev => [newTicket, ...prev]);
+  const addTicket = async (ticket) => {
+    try {
+      await apiCall('/maintenance', {
+        method: 'POST',
+        body: JSON.stringify(ticket)
+      });
+      const [ticketsData, assetsData] = await Promise.all([
+        apiCall('/maintenance'),
+        apiCall('/assets')
+      ]);
+      setTickets(ticketsData);
+      setAssets(assetsData);
+    } catch (error) {
+      console.error('Add maintenance ticket error:', error);
+    }
   };
 
-  const updateTicket = (id, updatedFields) => {
-    setTickets(prev => prev.map(t => t.id === id ? { ...t, ...updatedFields } : t));
+  const updateTicket = async (id, updatedFields) => {
+    try {
+      await apiCall(`/maintenance/${id}`, {
+        method: 'PUT',
+        body: JSON.stringify(updatedFields)
+      });
+      const ticketsData = await apiCall('/maintenance');
+      setTickets(ticketsData);
+    } catch (error) {
+      console.error('Update ticket error:', error);
+    }
   };
 
-  const moveTicketColumn = (ticketId, targetColumn) => {
-    setTickets(prev => prev.map(t => {
-      if (t.id === ticketId) {
-        let updated = { ...t, status: targetColumn };
-        if (targetColumn === 'Completed') {
-          updated.progress = 100;
-          updated.priority = 'Done';
-        } else if (targetColumn === 'Review') {
-          updated.progress = 100;
-          updated.priority = 'Low';
-        } else if (targetColumn === 'In Progress' && updated.progress === 0) {
-          updated.progress = 10;
-        } else if (targetColumn === 'Backlog') {
-          updated.progress = 0;
-        }
-        return updated;
-      }
-      return t;
-    }));
+  const moveTicketColumn = async (ticketId, targetColumn) => {
+    try {
+      await apiCall(`/maintenance/${ticketId}/status`, {
+        method: 'POST',
+        body: JSON.stringify({ status: targetColumn })
+      });
+      const [ticketsData, assetsData] = await Promise.all([
+        apiCall('/maintenance'),
+        apiCall('/assets')
+      ]);
+      setTickets(ticketsData);
+      setAssets(assetsData);
+    } catch (error) {
+      console.error('Move ticket column error:', error);
+    }
   };
 
   // Audit Operations
-  const addAuditCycle = (audit) => {
-    const newId = `AUD-${Math.floor(100 + Math.random() * 900)}`;
-    const newAudit = {
-      id: newId,
-      status: "Draft",
-      items: audit.items || [],
-      timeline: [{ date: new Date().toISOString().split('T')[0], event: "Audit Cycle Created" }],
-      ...audit
-    };
-    setAudits(prev => [newAudit, ...prev]);
+  const addAuditCycle = async (audit) => {
+    try {
+      await apiCall('/audits', {
+        method: 'POST',
+        body: JSON.stringify(audit)
+      });
+      const auditsData = await apiCall('/audits');
+      setAudits(auditsData);
+    } catch (error) {
+      console.error('Add audit cycle error:', error);
+    }
   };
 
-  const updateAuditCycle = (id, updatedFields) => {
-    setAudits(prev => prev.map(a => a.id === id ? { ...a, ...updatedFields } : a));
+  const updateAuditCycle = async (id, updatedFields) => {
+    try {
+      if (updatedFields.items) {
+        await apiCall(`/audits/${id}/checklist`, {
+          method: 'PUT',
+          body: JSON.stringify({ items: updatedFields.items })
+        });
+      }
+      const auditsData = await apiCall('/audits');
+      setAudits(auditsData);
+    } catch (error) {
+      console.error('Update audit cycle error:', error);
+    }
   };
 
   // Notification Operations
-  const addNotification = (notif) => {
-    const newId = `N-${Math.floor(1000 + Math.random() * 9000)}`;
-    const newNotif = {
-      id: newId,
-      timestamp: "Just now",
-      read: false,
-      ...notif
-    };
-    setNotifications(prev => [newNotif, ...prev]);
+  const addNotification = async (notif) => {
+    try {
+      // Create is handled by server background logic, but refresh for local triggers
+      const notifsData = await apiCall('/notifications');
+      setNotifications(notifsData);
+    } catch (error) {
+      console.error('Add notification error:', error);
+    }
   };
 
-  const markNotificationRead = (id) => {
-    setNotifications(prev => prev.map(n => n.id === id ? { ...n, read: true } : n));
+  const markNotificationRead = async (id) => {
+    try {
+      await apiCall(`/notifications/${id}/read`, { method: 'PUT' });
+      const notifsData = await apiCall('/notifications');
+      setNotifications(notifsData);
+    } catch (error) {
+      console.error('Mark notification read error:', error);
+    }
   };
 
-  const clearNotifications = () => {
-    setNotifications([]);
+  const clearNotifications = async () => {
+    try {
+      await apiCall('/notifications', { method: 'DELETE' });
+      setNotifications([]);
+    } catch (error) {
+      console.error('Clear notifications error:', error);
+    }
   };
 
   return (
@@ -766,7 +597,8 @@ export const AppProvider = ({ children }) => {
       markNotificationRead,
       clearNotifications,
       setTheme,
-      setThemeColor
+      setThemeColor,
+      apiCall
     }}>
       {children}
     </AppContext.Provider>

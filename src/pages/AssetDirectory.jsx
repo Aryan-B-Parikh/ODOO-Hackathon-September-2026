@@ -174,6 +174,12 @@ export default function AssetDirectory() {
     setShowAddModal(true);
   };
 
+  const handleDelete = (id) => {
+    if (confirm("Are you sure you want to delete this asset?")) {
+      deleteAsset(id);
+    }
+  };
+
   // Bulk Actions
   const handleBulkDelete = () => {
     if (confirm(`Are you sure you want to delete these ${selectedAssetIds.length} assets?`)) {
@@ -586,7 +592,7 @@ export default function AssetDirectory() {
                       <button onClick={() => handleOpenEdit(asset)} className="p-2 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-primary transition-colors">
                         <span className="material-symbols-outlined text-[16px]">edit</span>
                       </button>
-                      <button onClick={() => handleDelete(asset.id, 'assets')} className="p-2 hover:bg-error-container/20 rounded-lg text-error transition-colors">
+                      <button onClick={() => handleDelete(asset.id)} className="p-2 hover:bg-error-container/20 rounded-lg text-error transition-colors">
                         <span className="material-symbols-outlined text-[16px]">delete</span>
                       </button>
                     </div>

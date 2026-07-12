@@ -1,4 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useContext } from 'react';
+import { AppContext } from '../context/AppContext';
+
 
 const settingsTabs = [
   { id: 'general', icon: 'tune', label: 'General' },
@@ -8,12 +10,6 @@ const settingsTabs = [
   { id: 'billing', icon: 'payments', label: 'Billing' },
 ];
 
-const mockUsers = [
-  { name: 'Alex Chen', email: 'alex.chen@assetflow.com', role: 'Admin', status: 'Active', avatarBg: 'bg-blue-100 text-blue-700', initials: 'AC' },
-  { name: 'Sarah Jenkins', email: 'sarah.j@assetflow.com', role: 'Manager', status: 'Active', avatarBg: 'bg-purple-100 text-purple-700', initials: 'SJ' },
-  { name: 'David Miller', email: 'david.m@assetflow.com', role: 'Auditor', status: 'Active', avatarBg: 'bg-green-100 text-green-700', initials: 'DM' },
-  { name: 'Maria Garcia', email: 'maria.g@assetflow.com', role: 'Viewer', status: 'Inactive', avatarBg: 'bg-orange-100 text-orange-700', initials: 'MG' },
-];
 
 const integrations = [
   { name: 'Slack', icon: '💬', desc: 'Team notifications and alerts', connected: true },
@@ -111,6 +107,55 @@ function GeneralPanel() {
 }
 
 function UsersPanel() {
+  const { users, signup, deleteUser, updateUser } = useContext(AppContext);
+  const [showInviteModal, setShowInviteModal] = useState(false);
+  const [editingUser, setEditingUser] = useState(null);
+  
+  const [form, setForm] = useState({
+    name: '',
+    email: '',
+    role: 'Employee',
+    phone: '',
+    status: 'Active'
+  });
+
+  const handleOpenInvite = () => {
+    setEditingUser(null);
+    setForm({ name: '', email: '', role: 'Employee', phone: '', status: 'Active' });
+    setShowInviteModal(true);
+  };
+
+  const handleOpenEdit = (u) => {
+    setEditingUser(u);
+    setForm({ name: u.name, email: u.email, role: u.role, phone: u.phone || '', status: u.status || 'Active' });
+    setShowInviteModal(true);
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!form.name || !form.email) return;
+
+    if (editingUser) {
+      updateUser(editingUser.email, form);
+    } else {
+      signup({
+        name: form.name,
+        email: form.email,
+        password: 'password123',
+        role: form.role,
+        phone: form.phone,
+        status: form.status
+      });
+    }
+    setShowInviteModal(false);
+  };
+
+  const handleDelete = (email) => {
+    if (confirm(`Are you sure you want to remove user ${email}?`)) {
+      deleteUser(email);
+    }
+  };
+
   return (
     <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-8 shadow-sm">
       <div className="flex items-center justify-between mb-6">
@@ -118,17 +163,20 @@ function UsersPanel() {
           <h3 className="text-xl font-bold text-on-surface">User Management</h3>
           <p className="text-sm text-on-surface-variant mt-1">Control who can access and manage your assets.</p>
         </div>
-        <button className="bg-primary text-on-primary px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all">
+        <button 
+          onClick={handleOpenInvite}
+          className="bg-primary text-on-primary px-6 py-3 rounded-xl text-sm font-semibold flex items-center gap-2 shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all"
+        >
           <span className="material-symbols-outlined text-[20px]">person_add</span>
           Invite User
         </button>
       </div>
       <div className="space-y-3">
-        {mockUsers.map((u, i) => (
-          <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-outline-variant/20 hover:bg-surface-container-low transition-colors">
+        {users.map((u, i) => (
+          <div key={i} className="flex items-center justify-between p-4 rounded-xl border border-outline-variant/20 hover:bg-surface-container-low dark:hover:bg-surface-container/50 transition-colors group">
             <div className="flex items-center gap-4">
-              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${u.avatarBg}`}>
-                {u.initials}
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center font-bold text-sm ${u.avatarBg || 'bg-primary/10 text-primary'}`}>
+                {u.initials || u.name?.split(' ').map(n => n[0]).join('')}
               </div>
               <div>
                 <p className="font-semibold text-on-surface">{u.name}</p>
@@ -136,15 +184,106 @@ function UsersPanel() {
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-xs font-bold bg-blue-100 text-blue-700 px-3 py-1 rounded-full">{u.role}</span>
-              <span className={`text-xs font-bold px-3 py-1 rounded-full ${u.status === 'Active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>{u.status}</span>
-              <button className="p-2 hover:bg-surface-container-high rounded-full transition-colors">
-                <span className="material-symbols-outlined text-on-surface-variant text-[20px]">more_vert</span>
-              </button>
+              <span className="text-xs font-bold bg-blue-100 text-blue-700 dark:bg-blue-950/40 dark:text-blue-300 px-3 py-1 rounded-full">{u.role}</span>
+              <span className={`text-xs font-bold px-3 py-1 rounded-full ${u.status === 'Active' ? 'bg-green-100 text-green-700 dark:bg-green-950/40 dark:text-green-300' : 'bg-gray-100 text-gray-500'}`}>{u.status}</span>
+              <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                <button onClick={() => handleOpenEdit(u)} className="p-1.5 hover:bg-surface-container-high rounded-lg text-on-surface-variant hover:text-primary transition-colors" title="Edit User">
+                  <span className="material-symbols-outlined text-[16px]">edit</span>
+                </button>
+                <button onClick={() => handleDelete(u.email)} className="p-1.5 hover:bg-error-container/20 rounded-lg text-error transition-colors" title="Remove User">
+                  <span className="material-symbols-outlined text-[16px]">delete</span>
+                </button>
+              </div>
             </div>
           </div>
         ))}
       </div>
+
+      {showInviteModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4 animate-fadeIn" onClick={() => setShowInviteModal(false)}>
+          <div className="bg-white dark:bg-surface-container-high rounded-2xl shadow-2xl w-full max-w-md p-6" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6 border-b border-outline-variant/30 pb-3">
+              <h3 className="font-bold text-on-surface text-lg">
+                {editingUser ? 'Edit User Configuration' : 'Invite New Team Member'}
+              </h3>
+              <button onClick={() => setShowInviteModal(false)} className="p-1.5 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-on-surface">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+            
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1.5">Full Name *</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. Jane Doe"
+                  className="w-full px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low dark:bg-surface-container text-sm focus:ring-2 focus:ring-primary/20 outline-none text-on-surface"
+                  value={form.name}
+                  onChange={e => setForm(prev => ({ ...prev, name: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1.5">Work Email *</label>
+                <input 
+                  type="email" 
+                  required
+                  disabled={!!editingUser}
+                  placeholder="name@company.com"
+                  className="w-full px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low dark:bg-surface-container text-sm focus:ring-2 focus:ring-primary/20 outline-none text-on-surface disabled:opacity-50"
+                  value={form.email}
+                  onChange={e => setForm(prev => ({ ...prev, email: e.target.value }))}
+                />
+              </div>
+
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1.5">Assigned Role</label>
+                <select 
+                  className="w-full px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low dark:bg-surface-container text-sm focus:ring-2 focus:ring-primary/20 outline-none text-on-surface cursor-pointer"
+                  value={form.role}
+                  onChange={e => setForm(prev => ({ ...prev, role: e.target.value }))}
+                >
+                  <option value="Admin">Admin</option>
+                  <option value="Asset Manager">Asset Manager</option>
+                  <option value="Department Head">Department Head</option>
+                  <option value="Employee">Employee</option>
+                  <option value="Auditor">Auditor</option>
+                  <option value="Viewer">Viewer</option>
+                </select>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1.5">User Status</label>
+                <select 
+                  className="w-full px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low dark:bg-surface-container text-sm focus:ring-2 focus:ring-primary/20 outline-none text-on-surface cursor-pointer"
+                  value={form.status}
+                  onChange={e => setForm(prev => ({ ...prev, status: e.target.value }))}
+                >
+                  <option value="Active">Active</option>
+                  <option value="Inactive">Inactive</option>
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/30 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setShowInviteModal(false)}
+                  className="px-4 py-2 rounded-xl text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-5 py-2 bg-primary text-on-primary rounded-xl text-sm font-semibold hover:opacity-90 active:scale-95 transition-all shadow-md shadow-primary/10"
+                >
+                  {editingUser ? 'Save Changes' : 'Send Invite'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
@@ -175,49 +314,102 @@ function IntegrationsPanel() {
 }
 
 function NotificationsPanel() {
-  const [settings, setSettings] = useState({
-    email: true, push: true, sms: false,
-    auditAlerts: true, maintenanceDue: true, assetMovement: false, weeklyReport: true,
-  });
-  const toggle = (key) => setSettings(s => ({ ...s, [key]: !s[key] }));
+  const { apiCall } = useContext(AppContext);
+  const [preferences, setPreferences] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const Toggle = ({ id }) => (
-    <button onClick={() => toggle(id)} className={`relative w-12 h-6 rounded-full transition-colors ${settings[id] ? 'bg-primary' : 'bg-outline-variant'}`}>
-      <span className={`absolute top-0.5 left-0.5 w-5 h-5 bg-white rounded-full shadow transition-transform ${settings[id] ? 'translate-x-6' : 'translate-x-0'}`}></span>
-    </button>
-  );
+  useEffect(() => {
+    let active = true;
+    const fetchPrefs = async () => {
+      try {
+        const data = await apiCall('/auth/preferences');
+        if (active) {
+          setPreferences(data);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Failed to fetch preferences:', err);
+      }
+    };
+    fetchPrefs();
+    return () => { active = false; };
+  }, []);
+
+  const toggleChannel = async (type, channel) => {
+    const updated = preferences.map(p => {
+      if (p.notificationType === type) {
+        return { ...p, [channel]: !p[channel] };
+      }
+      return p;
+    });
+    setPreferences(updated);
+
+    try {
+      await apiCall('/auth/preferences', {
+        method: 'POST',
+        body: JSON.stringify({
+          preferences: updated.map(p => ({
+            type: p.notificationType,
+            channelEmail: p.channelEmail,
+            channelPush: p.channelPush,
+            channelInApp: p.channelInApp
+          }))
+        })
+      });
+    } catch (err) {
+      console.error('Failed to update preference:', err);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">
       <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-8 shadow-sm">
-        <h3 className="text-xl font-bold text-on-surface mb-6">Notification Channels</h3>
+        <h3 className="text-xl font-bold text-on-surface mb-2">Notification Preferences</h3>
+        <p className="text-sm text-on-surface-variant mb-6">Manage notification delivery channels across system modules.</p>
         <div className="space-y-4">
-          {[{ id: 'email', label: 'Email Notifications', icon: 'email' }, { id: 'push', label: 'Push Notifications', icon: 'notifications' }, { id: 'sms', label: 'SMS Alerts', icon: 'sms' }].map(ch => (
-            <div key={ch.id} className="flex items-center justify-between p-4 rounded-xl border border-outline-variant/20">
-              <div className="flex items-center gap-3">
-                <span className="material-symbols-outlined text-primary">{ch.icon}</span>
-                <span className="font-semibold text-on-surface">{ch.label}</span>
-              </div>
-              <Toggle id={ch.id} />
-            </div>
-          ))}
-        </div>
-      </div>
-      <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-8 shadow-sm">
-        <h3 className="text-xl font-bold text-on-surface mb-6">Alert Preferences</h3>
-        <div className="space-y-4">
-          {[
-            { id: 'auditAlerts', label: 'Audit Discrepancy Alerts', desc: 'Notify when discrepancies are detected' },
-            { id: 'maintenanceDue', label: 'Maintenance Due Reminders', desc: 'Get notified before scheduled maintenance' },
-            { id: 'assetMovement', label: 'Asset Movement Events', desc: 'Track when assets change locations' },
-            { id: 'weeklyReport', label: 'Weekly Summary Report', desc: 'Receive weekly digest every Monday' },
-          ].map(pref => (
-            <div key={pref.id} className="flex items-center justify-between p-4 rounded-xl border border-outline-variant/20">
+          {preferences.map(pref => (
+            <div key={pref.id} className="p-5 rounded-xl border border-outline-variant/20 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
               <div>
-                <p className="font-semibold text-on-surface">{pref.label}</p>
-                <p className="text-xs text-on-surface-variant mt-0.5">{pref.desc}</p>
+                <p className="font-bold text-on-surface text-sm uppercase tracking-wider">{pref.notificationType}</p>
+                <p className="text-xs text-on-surface-variant mt-1">Configure notification channels for this type.</p>
               </div>
-              <Toggle id={pref.id} />
+              <div className="flex items-center gap-6 flex-wrap">
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-on-surface-variant font-medium">Email</span>
+                  <button 
+                    onClick={() => toggleChannel(pref.notificationType, 'channelEmail')} 
+                    className={`relative w-10 h-5 rounded-full transition-colors ${pref.channelEmail ? 'bg-primary' : 'bg-outline-variant'}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${pref.channelEmail ? 'translate-x-5' : 'translate-x-0'}`}></span>
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-on-surface-variant font-medium">Push</span>
+                  <button 
+                    onClick={() => toggleChannel(pref.notificationType, 'channelPush')} 
+                    className={`relative w-10 h-5 rounded-full transition-colors ${pref.channelPush ? 'bg-primary' : 'bg-outline-variant'}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${pref.channelPush ? 'translate-x-5' : 'translate-x-0'}`}></span>
+                  </button>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span className="text-xs text-on-surface-variant font-medium">In-App</span>
+                  <button 
+                    onClick={() => toggleChannel(pref.notificationType, 'channelInApp')} 
+                    className={`relative w-10 h-5 rounded-full transition-colors ${pref.channelInApp ? 'bg-primary' : 'bg-outline-variant'}`}
+                  >
+                    <span className={`absolute top-0.5 left-0.5 w-4 h-4 bg-white rounded-full shadow transition-transform ${pref.channelInApp ? 'translate-x-5' : 'translate-x-0'}`}></span>
+                  </button>
+                </div>
+              </div>
             </div>
           ))}
         </div>

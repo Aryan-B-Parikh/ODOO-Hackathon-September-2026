@@ -1,13 +1,42 @@
-import React, { useContext } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
 
 export default function Dashboard() {
-  const { assets, tickets } = useContext(AppContext);
+  const { assets, tickets, apiCall } = useContext(AppContext);
+  const [stats, setStats] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  // Dynamic calculations based on state + design base numbers
-  const totalAssetsCount = 12477 + assets.length;
-  const activeAllocationsCount = 8899 + assets.filter(a => a.status === 'Active').length;
-  const pendingMaintenanceCount = tickets.filter(t => t.status !== 'Completed').length;
+  const [monitorTab, setMonitorTab] = useState('activity');
+  const [alertTab, setAlertTab] = useState('overdue');
+
+  useEffect(() => {
+    let active = true;
+    const fetchStats = async () => {
+      try {
+        const data = await apiCall('/dashboard');
+        if (active) {
+          setStats(data);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Failed to load dashboard stats:', err);
+      }
+    };
+    fetchStats();
+
+    // 30 seconds polling for real-time updates
+    const interval = setInterval(fetchStats, 30000);
+
+    return () => { 
+      active = false; 
+      clearInterval(interval);
+    };
+  }, [assets, tickets]);
+
+  // Dynamic calculations based on state + API metrics
+  const totalAssetsCount = stats ? stats.totalAssets : assets.length;
+  const activeAllocationsCount = stats ? stats.activeAllocations : assets.filter(a => a.status === 'Active').length;
+  const pendingMaintenanceCount = stats ? stats.pendingMaintenance : tickets.filter(t => t.status !== 'Completed').length;
   const criticalAlertsCount = tickets.filter(t => t.priority === 'High' && t.status !== 'Completed').length;
 
   // Distribution calculations
@@ -18,40 +47,47 @@ export default function Dashboard() {
     "Manufacturing": assets.filter(a => a.category === "Manufacturing").length,
   };
 
-  const recentActivities = [
-    {
-      id: 1,
-      icon: "check_circle",
-      iconColor: "text-green-600 bg-green-50 dark:bg-green-900/20",
-      title: "MacBook Pro M3 Max Audit Completed",
-      desc: "Sarah Jenkins completed weekly self-audit of ASSET-8291.",
-      time: "2 hours ago"
-    },
-    {
-      id: 2,
-      icon: "warning",
-      iconColor: "text-amber-600 bg-amber-50 dark:bg-amber-900/20",
-      title: "Forklift F2 Hydraulic Alert Raised",
-      desc: "Automated telemetry reported low pressure in reservoir B.",
-      time: "4 hours ago"
-    },
-    {
-      id: 3,
-      icon: "add_circle",
-      iconColor: "text-blue-600 bg-blue-50 dark:bg-blue-900/20",
-      title: "New Network Switch Registered",
-      desc: "Cisco 48-port switch added to Server Room 2 inventory.",
-      time: "1 day ago"
-    },
-    {
-      id: 4,
-      icon: "build",
-      iconColor: "text-red-600 bg-red-50 dark:bg-red-900/20",
-      title: "Server Power Ticket Dispatched",
-      desc: "Ticket #AX-1988 assigned to Alex Rivera for Rack 12 power issues.",
-      time: "1 day ago"
-    }
-  ];
+  const recentActivities = stats && stats.recentActivity && stats.recentActivity.length > 0
+    ? stats.recentActivity.map((act, index) => {
+        let icon = "check_circle";
+        let iconColor = "text-green-600 bg-green-50 dark:bg-green-900/20";
+        if (act.action === 'Checkout') {
+          icon = "assignment_ind";
+          iconColor = "text-blue-600 bg-blue-50 dark:bg-blue-900/20";
+        } else if (act.action === 'Return') {
+          icon = "keyboard_return";
+          iconColor = "text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20";
+        } else if (act.action === 'Log Request') {
+          icon = "build";
+          iconColor = "text-amber-600 bg-amber-50 dark:bg-amber-900/20";
+        }
+        return {
+          id: act.id || index,
+          icon,
+          iconColor,
+          title: act.details,
+          desc: `Action performed by ${act.user}`,
+          time: act.timestamp
+        };
+      })
+    : [
+        {
+          id: 1,
+          icon: "check_circle",
+          iconColor: "text-green-600 bg-green-50 dark:bg-green-900/20",
+          title: "MacBook Pro M3 Max Audit Completed",
+          desc: "Sarah Jenkins completed weekly self-audit of ASSET-8291.",
+          time: "2 hours ago"
+        },
+        {
+          id: 2,
+          icon: "warning",
+          iconColor: "text-amber-600 bg-amber-50 dark:bg-amber-900/20",
+          title: "Forklift F2 Hydraulic Alert Raised",
+          desc: "Automated telemetry reported low pressure in reservoir B.",
+          time: "4 hours ago"
+        }
+      ];
 
   return (
     <div className="space-y-stack-gap animate-fadeIn">
@@ -146,6 +182,33 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Quick Operations Actions Grid */}
+      <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-6 shadow-sm">
+        <h3 className="text-on-surface font-bold text-sm tracking-wide uppercase font-label-caps mb-4">Quick Operations</h3>
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+          <a href="/assets" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-primary-container/20 border border-outline-variant/30 hover:border-primary/30 transition-all text-center group">
+            <span className="material-symbols-outlined text-[28px] text-primary group-hover:scale-110 transition-transform">add_circle</span>
+            <span className="text-xs font-bold text-on-surface">Register Asset</span>
+          </a>
+          <a href="/assets" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-secondary-container/20 border border-outline-variant/30 hover:border-secondary/30 transition-all text-center group">
+            <span className="material-symbols-outlined text-[28px] text-secondary group-hover:scale-110 transition-transform">assignment_turned_in</span>
+            <span className="text-xs font-bold text-on-surface">Checkout Asset</span>
+          </a>
+          <a href="/bookings" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-tertiary-container/20 border border-outline-variant/30 hover:border-tertiary/30 transition-all text-center group">
+            <span className="material-symbols-outlined text-[28px] text-tertiary group-hover:scale-110 transition-transform">calendar_month</span>
+            <span className="text-xs font-bold text-on-surface">Book Resource</span>
+          </a>
+          <a href="/maintenance" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-error-container/20 border border-outline-variant/30 hover:border-error/30 transition-all text-center group">
+            <span className="material-symbols-outlined text-[28px] text-error group-hover:scale-110 transition-transform">build_circle</span>
+            <span className="text-xs font-bold text-on-surface">Log Repair</span>
+          </a>
+          <a href="/settings" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-primary-container/20 border border-outline-variant/30 hover:border-primary/30 transition-all text-center group col-span-2 sm:col-span-1">
+            <span className="material-symbols-outlined text-[28px] text-on-surface-variant group-hover:scale-110 transition-transform">person_add</span>
+            <span className="text-xs font-bold text-on-surface">Invite Employee</span>
+          </a>
+        </div>
+      </div>
+
       {/* Main Insights Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
         {/* Asset Utilization Area Chart */}
@@ -229,25 +292,196 @@ export default function Dashboard() {
         </div>
       </div>
 
-      {/* Activities Section */}
-      <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm">
-        <h3 className="font-headline-md text-[18px] text-on-surface font-bold mb-6">Recent System Activity</h3>
-        <div className="divide-y divide-outline-variant/30">
-          {recentActivities.map((act) => (
-            <div key={act.id} className="flex gap-4 py-4 first:pt-0 last:pb-0 group">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${act.iconColor}`}>
-                <span className="material-symbols-outlined text-[20px]">{act.icon}</span>
-              </div>
-              <div className="flex-1">
-                <div className="flex justify-between items-start">
-                  <h4 className="font-body-md text-body-md text-on-surface font-bold group-hover:text-primary transition-colors leading-tight">{act.title}</h4>
-                  <span className="text-[11px] text-on-surface-variant whitespace-nowrap">{act.time}</span>
-                </div>
-                <p className="text-on-surface-variant font-body-md text-[13px] mt-1">{act.desc}</p>
-              </div>
+      {/* Bottom Grid: Tabbed Activities, Bookings, Overdue, Upcoming, and Transfers Panels */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        
+        {/* Left Column: System Monitor */}
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between border-b border-outline-variant/20 pb-4 mb-6">
+            <h3 className="font-headline-md text-[16px] text-on-surface font-bold">System Monitor</h3>
+            <div className="flex bg-surface-container rounded-lg p-0.5 shrink-0">
+              <button
+                onClick={() => setMonitorTab('activity')}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${monitorTab === 'activity' ? 'bg-white dark:bg-surface-container-high text-primary shadow-sm' : 'text-on-surface-variant'}`}
+              >
+                Recent Activity
+              </button>
+              <button
+                onClick={() => setMonitorTab('bookings')}
+                className={`px-3 py-1 rounded-md text-xs font-bold transition-all ${monitorTab === 'bookings' ? 'bg-white dark:bg-surface-container-high text-primary shadow-sm' : 'text-on-surface-variant'}`}
+              >
+                Active Bookings
+              </button>
             </div>
-          ))}
+          </div>
+
+          <div className="divide-y divide-outline-variant/30 flex-1 overflow-y-auto max-h-[350px]">
+            {monitorTab === 'activity' ? (
+              recentActivities.map((act) => (
+                <div key={act.id} className="flex gap-4 py-4 first:pt-0 last:pb-0 group">
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${act.iconColor} shrink-0`}>
+                    <span className="material-symbols-outlined text-[20px]">{act.icon}</span>
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex justify-between items-start gap-2">
+                      <h4 className="font-body-md text-body-md text-on-surface font-bold group-hover:text-primary transition-colors leading-tight truncate">{act.title}</h4>
+                      <span className="text-[11px] text-on-surface-variant whitespace-nowrap">{act.time}</span>
+                    </div>
+                    <p className="text-on-surface-variant font-body-md text-[13px] mt-1">{act.desc}</p>
+                  </div>
+                </div>
+              ))
+            ) : (
+              stats && stats.activeBookings && stats.activeBookings.length > 0 ? (
+                stats.activeBookings.map((b, idx) => (
+                  <div key={b.id || idx} className="flex gap-4 py-4 first:pt-0 last:pb-0 group">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-blue-100 text-blue-800 dark:bg-blue-900/20 shrink-0">
+                      <span className="material-symbols-outlined text-[20px]">event_available</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="font-body-md text-body-md text-on-surface font-bold truncate">{b.asset.name}</h4>
+                        <span className="text-[10px] text-blue-800 bg-blue-50 px-2.5 py-0.5 rounded font-bold uppercase tracking-wider">
+                          Booked
+                        </span>
+                      </div>
+                      <p className="text-on-surface-variant font-body-md text-[13px] mt-1">
+                        Reserved by: <strong>{b.bookedBy ? b.bookedBy.name : 'Unknown Staff'}</strong>
+                      </p>
+                      <p className="text-[11px] text-on-surface-variant/80 font-mono mt-0.5">
+                        {new Date(b.startTime).toLocaleDateString()} at {new Date(b.startTime).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              ) : (
+                <div className="py-8 text-center text-on-surface-variant font-medium text-sm">
+                  📅 No active resource bookings found.
+                </div>
+              )
+            )}
+          </div>
         </div>
+
+        {/* Right Column: Alert Center */}
+        <div className="bg-surface-container-lowest border border-outline-variant rounded-xl p-6 shadow-sm flex flex-col">
+          <div className="flex items-center justify-between border-b border-outline-variant/20 pb-4 mb-6">
+            <h3 className="font-headline-md text-[16px] text-on-surface font-bold">Alert Center</h3>
+            <div className="flex bg-surface-container rounded-lg p-0.5 shrink-0">
+              <button
+                onClick={() => setAlertTab('overdue')}
+                className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${alertTab === 'overdue' ? 'bg-white dark:bg-surface-container-high text-primary shadow-sm' : 'text-on-surface-variant'}`}
+              >
+                Overdue
+              </button>
+              <button
+                onClick={() => setAlertTab('upcoming')}
+                className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${alertTab === 'upcoming' ? 'bg-white dark:bg-surface-container-high text-primary shadow-sm' : 'text-on-surface-variant'}`}
+              >
+                Upcoming
+              </button>
+              <button
+                onClick={() => setAlertTab('transfers')}
+                className={`px-2.5 py-1 rounded-md text-xs font-bold transition-all ${alertTab === 'transfers' ? 'bg-white dark:bg-surface-container-high text-primary shadow-sm' : 'text-on-surface-variant'}`}
+              >
+                Transfers
+              </button>
+            </div>
+          </div>
+
+          <div className="divide-y divide-outline-variant/30 flex-1 overflow-y-auto max-h-[350px]">
+            {alertTab === 'overdue' && (
+              !stats || !stats.overdueAllocations || stats.overdueAllocations.length === 0 ? (
+                <div className="py-8 text-center text-on-surface-variant font-medium text-sm">
+                  🎉 Excellent! No overdue asset checkouts detected.
+                </div>
+              ) : (
+                stats.overdueAllocations.map((alloc) => (
+                  <div key={alloc.id} className="flex gap-4 py-4 first:pt-0 last:pb-0 group">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-error-container text-error shrink-0 animate-pulse">
+                      <span className="material-symbols-outlined text-[20px]">assignment_late</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="font-body-md text-body-md text-on-surface font-bold truncate">{alloc.asset.name}</h4>
+                        <span className="text-[10px] text-error font-bold whitespace-nowrap bg-error-container/20 px-2 py-0.5 rounded">
+                          Overdue
+                        </span>
+                      </div>
+                      <p className="text-on-surface-variant font-body-md text-[13px] mt-1">
+                        Held by: <strong>{alloc.employee ? alloc.employee.name : 'Unknown Staff'}</strong>
+                      </p>
+                      <p className="text-[11px] text-on-surface-variant/80 font-mono mt-0.5">
+                        Expected Return: {new Date(alloc.expectedReturnDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )
+            )}
+
+            {alertTab === 'upcoming' && (
+              !stats || !stats.upcomingReturns || stats.upcomingReturns.length === 0 ? (
+                <div className="py-8 text-center text-on-surface-variant font-medium text-sm">
+                  🎉 No upcoming return deadlines in the next 7 days.
+                </div>
+              ) : (
+                stats.upcomingReturns.map((alloc) => (
+                  <div key={alloc.id} className="flex gap-4 py-4 first:pt-0 last:pb-0 group">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-emerald-100 text-emerald-800 dark:bg-emerald-900/20 shrink-0">
+                      <span className="material-symbols-outlined text-[20px]">assignment_returned</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="font-body-md text-body-md text-on-surface font-bold truncate">{alloc.asset.name}</h4>
+                        <span className="text-[10px] text-emerald-800 bg-emerald-50 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                          Returning
+                        </span>
+                      </div>
+                      <p className="text-on-surface-variant font-body-md text-[13px] mt-1">
+                        Held by: <strong>{alloc.employee ? alloc.employee.name : 'Unknown Staff'}</strong>
+                      </p>
+                      <p className="text-[11px] text-on-surface-variant/80 font-mono mt-0.5">
+                        Expected Return: {new Date(alloc.expectedReturnDate).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )
+            )}
+
+            {alertTab === 'transfers' && (
+              !stats || !stats.pendingTransfers || stats.pendingTransfers.length === 0 ? (
+                <div className="py-8 text-center text-on-surface-variant font-medium text-sm">
+                  📋 No pending transfer requests detected.
+                </div>
+              ) : (
+                stats.pendingTransfers.map((req) => (
+                  <div key={req.id} className="flex gap-4 py-4 first:pt-0 last:pb-0 group">
+                    <div className="w-10 h-10 rounded-xl flex items-center justify-center bg-purple-100 text-purple-800 dark:bg-purple-900/20 shrink-0">
+                      <span className="material-symbols-outlined text-[20px]">move_up</span>
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <div className="flex justify-between items-start gap-2">
+                        <h4 className="font-body-md text-body-md text-on-surface font-bold truncate">{req.asset.name}</h4>
+                        <span className="text-[10px] text-purple-800 bg-purple-50 px-2 py-0.5 rounded font-bold uppercase tracking-wider">
+                          Transfer
+                        </span>
+                      </div>
+                      <p className="text-on-surface-variant font-body-md text-[13px] mt-1">
+                        From: <strong>{req.requestor.name}</strong> ➔ To: <strong>{req.targetEmployee ? req.targetEmployee.name : 'Department'}</strong>
+                      </p>
+                      <p className="text-[11px] text-on-surface-variant/80 font-mono mt-0.5">
+                        Requested: {new Date(req.createdAt).toLocaleDateString()}
+                      </p>
+                    </div>
+                  </div>
+                ))
+              )
+            )}
+          </div>
+        </div>
+
       </div>
     </div>
   );

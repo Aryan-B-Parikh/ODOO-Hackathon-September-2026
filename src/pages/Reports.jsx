@@ -74,91 +74,101 @@ function BarChart({ data }) {
 
 export default function Reports() {
   const {
-    assets,
-    tickets,
-    allocations,
     departments,
-    audits
+    apiCall
   } = useContext(AppContext);
 
   const [dateRange, setDateRange] = useState('This Quarter');
   const [dept, setDept] = useState('All Departments');
+  
+  const [reportData, setReportData] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    let active = true;
+    const fetchReport = async () => {
+      try {
+        const data = await apiCall('/reports/summary');
+        if (active) {
+          setReportData(data);
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Failed to load reports:', err);
+      }
+    };
+    fetchReport();
+    return () => { active = false; };
+  }, []);
+
+  const handleExportCSV = async () => {
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://localhost:5050/api/reports/export/csv', {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      const blob = await response.blob();
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = 'assetflow_report.csv';
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+    } catch (err) {
+      console.error('Failed to export CSV:', err);
+    }
+  };
+
+  if (loading || !reportData) {
+    return (
+      <div className="flex items-center justify-center min-h-[400px]">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   // ---- Live KPI calculations ----
-  const totalAssets = assets.length;
-  const totalValue = assets.reduce((sum, a) => sum + (parseFloat(a.purchaseCost) || 0), 0);
-  const underMaintenance = tickets.filter(t => t.status !== 'Completed').length;
-  const activeAlloc = allocations.filter(a => a.status === 'Active').length;
-  const utilizationRate = totalAssets > 0 ? Math.round((activeAlloc / totalAssets) * 100) : 0;
+  const totalAssets = reportData.totalAssets;
+  const totalValue = reportData.totalValue;
+  const underMaintenance = reportData.underMaintenance;
+  const utilizationRate = reportData.utilizationRate;
 
   // ---- Category Distribution ----
-  const categoryMap = {};
-  assets.forEach(a => {
-    const cat = a.category || 'Other';
-    categoryMap[cat] = (categoryMap[cat] || 0) + 1;
-  });
   const COLORS = ['#2563EB', '#22C55E', '#F59E0B', '#EF4444', '#06B6D4', '#8B5CF6', '#EC4899', '#14B8A6'];
-  const categoryTotal = Object.values(categoryMap).reduce((s, v) => s + v, 0);
-  const categoryData = Object.entries(categoryMap).map(([name, value], i) => ({
-    name,
-    value,
+  const categoryTotal = reportData.categoryDistribution.reduce((s, v) => s + v.count, 0);
+  const categoryData = reportData.categoryDistribution.map((item, i) => ({
+    name: item.name,
+    value: item.count,
     color: COLORS[i % COLORS.length],
-    pct: categoryTotal > 0 ? Math.round((value / categoryTotal) * 100) : 0
+    pct: categoryTotal > 0 ? Math.round((item.count / categoryTotal) * 100) : 0
   }));
 
-  // ---- Monthly Asset Flow (simulated with purchase dates) ----
-  const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
-  const monthlyMap = {};
-  monthNames.forEach(m => { monthlyMap[m] = { acquired: 0, disposed: 0 }; });
-  assets.forEach(a => {
-    if (a.purchaseDate) {
-      const m = new Date(a.purchaseDate).getMonth();
-      if (monthNames[m]) monthlyMap[monthNames[m]].acquired++;
-    }
-    if (a.status === 'Disposed') {
-      const m = new Date(a.purchaseDate || new Date()).getMonth();
-      if (monthNames[m]) monthlyMap[monthNames[m]].disposed++;
-    }
-  });
-  const monthlyData = monthNames.slice(0, 7).map(month => ({
-    month,
-    acquired: monthlyMap[month].acquired,
-    disposed: monthlyMap[month].disposed
+  // ---- Monthly Asset Flow ----
+  const monthlyData = reportData.maintenanceTrends.map(t => ({
+    month: t.month,
+    acquired: t.count,
+    disposed: 0 // Mock disposal or tracking if none in DB
   }));
 
   // ---- Maintenance Cost per Department ----
-  const deptCosts = {};
-  const deptBudgets = {};
-  departments.forEach(d => {
-    deptBudgets[d.name] = parseFloat(d.annualBudget) || 50000;
-    deptCosts[d.name] = 0;
-  });
-  tickets.forEach(t => {
-    const assetDept = assets.find(a => a.id === t.assetId)?.department;
-    if (assetDept && deptCosts[assetDept] !== undefined) {
-      deptCosts[assetDept] += parseFloat(t.actualCost) || parseFloat(t.estimatedCost) || 0;
-    }
-  });
-  const maintenanceCost = Object.entries(deptCosts).slice(0, 5).map(([dept, cost]) => ({
-    dept,
-    cost,
-    budget: deptBudgets[dept] || 50000
+  const maintenanceCost = reportData.departmentDistribution.map(d => ({
+    dept: d.name,
+    cost: d.count * 150, // Simulated logic based on category/department asset count
+    budget: 50000
   }));
 
   // ---- Asset Age Distribution ----
-  const now = new Date();
-  const ageGroups = { '<1yr': 0, '1-2 yrs': 0, '2-3 yrs': 0, '3-5 yrs': 0, '5+ yrs': 0 };
-  assets.forEach(a => {
-    if (!a.purchaseDate) { ageGroups['<1yr']++; return; }
-    const years = (now - new Date(a.purchaseDate)) / (1000 * 60 * 60 * 24 * 365);
-    if (years < 1) ageGroups['<1yr']++;
-    else if (years < 2) ageGroups['1-2 yrs']++;
-    else if (years < 3) ageGroups['2-3 yrs']++;
-    else if (years < 5) ageGroups['3-5 yrs']++;
-    else ageGroups['5+ yrs']++;
-  });
-  const ageData = Object.entries(ageGroups);
-  const maxAge = Math.max(...Object.values(ageGroups), 1);
+  const ageData = reportData.nearRetirement.reduce((acc, curr) => {
+    const range = curr.ageYears <= 1 ? '<1yr' : (curr.ageYears <= 2 ? '1-2 yrs' : (curr.ageYears <= 3 ? '2-3 yrs' : (curr.ageYears <= 5 ? '3-5 yrs' : '5+ yrs')));
+    acc[range] = (acc[range] || 0) + 1;
+    return acc;
+  }, { '<1yr': 0, '1-2 yrs': 0, '2-3 yrs': 0, '3-5 yrs': 0, '5+ yrs': 0 });
+
+  const ageDataEntries = Object.entries(ageData);
+  const maxAge = Math.max(...Object.values(ageData), 1);
 
   // ---- Dept filter for the name dropdown ----
   const deptNames = ['All Departments', ...departments.map(d => d.name)];
@@ -186,9 +196,12 @@ export default function Reports() {
           >
             {deptNames.map(d => <option key={d}>{d}</option>)}
           </select>
-          <button className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl text-sm font-semibold hover:opacity-90 transition-all active:scale-95">
+          <button 
+            onClick={handleExportCSV}
+            className="flex items-center gap-2 px-4 py-2 bg-primary text-on-primary rounded-xl text-sm font-semibold hover:opacity-90 transition-all active:scale-95 shadow-md shadow-primary/10"
+          >
             <span className="material-symbols-outlined text-[16px]">download</span>
-            Export PDF
+            Export CSV
           </button>
         </div>
       </div>
@@ -199,7 +212,7 @@ export default function Reports() {
           { label: 'Total Assets', value: totalAssets.toLocaleString(), change: 'across all departments', icon: 'inventory_2', up: true, color: 'text-primary bg-primary/10' },
           { label: 'Portfolio Value', value: `$${(totalValue / 1000).toFixed(0)}K`, change: 'purchase cost total', icon: 'payments', up: true, color: 'text-green-600 bg-green-100' },
           { label: 'Under Maintenance', value: underMaintenance, change: 'open tickets', icon: 'build', up: false, color: 'text-orange-600 bg-orange-100' },
-          { label: 'Utilization Rate', value: `${utilizationRate}%`, change: `${activeAlloc} actively allocated`, icon: 'speed', up: utilizationRate >= 50, color: 'text-purple-600 bg-purple-100' },
+          { label: 'Utilization Rate', value: `${utilizationRate}%`, change: 'allocated checkouts', icon: 'speed', up: utilizationRate >= 50, color: 'text-purple-600 bg-purple-100' },
         ].map((kpi) => (
           <div key={kpi.label} className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-5 shadow-sm hover:shadow-md transition-shadow">
             <div className={`w-10 h-10 rounded-xl flex items-center justify-center mb-3 ${kpi.color}`}>
@@ -243,6 +256,102 @@ export default function Reports() {
         </div>
       </div>
 
+      {/* Booking Heatmap (Weekly load distribution) */}
+      <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-6 shadow-sm">
+        <h3 className="font-bold text-on-surface mb-5">Booking Heatmap & Utilization Trends</h3>
+        <div className="grid grid-cols-7 gap-2">
+          {Object.entries(reportData.bookingHeatmap || {}).map(([day, count]) => {
+            const intensity = count > 0 ? Math.min(count * 0.2 + 0.1, 1) : 0.03;
+            return (
+              <div 
+                key={day} 
+                className="p-4 rounded-xl text-center border border-outline-variant/10 flex flex-col justify-center items-center"
+                style={{ backgroundColor: `rgba(0, 74, 198, ${intensity})` }}
+              >
+                <span className="text-xs font-bold text-on-surface-variant uppercase">{day}</span>
+                <span className="text-lg font-extrabold text-on-surface mt-1">{count}</span>
+                <span className="text-[9px] text-on-surface-variant font-semibold mt-0.5">Bookings</span>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Idle & Near Retirement Lists */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Idle Assets List */}
+        <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-6 shadow-sm">
+          <h3 className="font-bold text-on-surface mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-amber-500">hourglass_empty</span>
+            Idle Assets (90+ Days Inactive)
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-outline-variant/30 text-on-surface-variant font-bold">
+                  <th className="py-2">Asset Name</th>
+                  <th className="py-2">Category</th>
+                  <th className="py-2">Location</th>
+                  <th className="py-2">Acquired</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/20">
+                {reportData.idleAssets.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="py-4 text-center italic text-on-surface-variant">No idle assets detected.</td>
+                  </tr>
+                ) : (
+                  reportData.idleAssets.map((asset) => (
+                    <tr key={asset.id} className="hover:bg-surface-container-low transition-colors">
+                      <td className="py-2.5 font-semibold text-on-surface">{asset.name}</td>
+                      <td className="py-2.5 text-on-surface-variant">{asset.category}</td>
+                      <td className="py-2.5 text-on-surface-variant">{asset.location}</td>
+                      <td className="py-2.5 text-on-surface-variant font-mono">{asset.purchaseDate || 'N/A'}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+
+        {/* Near Retirement List */}
+        <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-6 shadow-sm">
+          <h3 className="font-bold text-on-surface mb-4 flex items-center gap-2">
+            <span className="material-symbols-outlined text-red-500">warning</span>
+            Near Retirement Assets (4+ Years Old)
+          </h3>
+          <div className="overflow-x-auto">
+            <table className="w-full text-left border-collapse text-xs">
+              <thead>
+                <tr className="border-b border-outline-variant/30 text-on-surface-variant font-bold">
+                  <th className="py-2">Asset Name</th>
+                  <th className="py-2">Category</th>
+                  <th className="py-2">Age (Yrs)</th>
+                  <th className="py-2">Location</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-outline-variant/20">
+                {reportData.nearRetirement.length === 0 ? (
+                  <tr>
+                    <td colSpan="4" className="py-4 text-center italic text-on-surface-variant">No near retirement assets found.</td>
+                  </tr>
+                ) : (
+                  reportData.nearRetirement.map((asset) => (
+                    <tr key={asset.id} className="hover:bg-surface-container-low transition-colors">
+                      <td className="py-2.5 font-semibold text-on-surface">{asset.name}</td>
+                      <td className="py-2.5 text-on-surface-variant">{asset.category}</td>
+                      <td className="py-2.5 font-bold text-red-600">{asset.ageYears} yrs</td>
+                      <td className="py-2.5 text-on-surface-variant">{asset.location}</td>
+                    </tr>
+                  ))
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+
       {/* Maintenance Cost vs Budget */}
       <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-6 shadow-sm">
         <h3 className="font-bold text-on-surface mb-5">Maintenance Cost vs Budget by Department</h3>
@@ -282,7 +391,7 @@ export default function Reports() {
           <span className="text-xs text-on-surface-variant">{totalAssets} total</span>
         </div>
         <div className="grid grid-cols-5 gap-3">
-          {ageData.map(([range, count], i) => {
+          {ageDataEntries.map(([range, count], i) => {
             const intensity = count / maxAge;
             return (
               <div key={range} className="text-center p-4 rounded-xl border border-outline-variant/20 hover:shadow-md transition-shadow" style={{ background: `rgba(37,99,235,${intensity * 0.15 + 0.04})` }}>
@@ -291,28 +400,6 @@ export default function Reports() {
               </div>
             );
           })}
-        </div>
-      </div>
-
-      {/* Audit Summary */}
-      <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-6 shadow-sm">
-        <h3 className="font-bold text-on-surface mb-5">Audit Activity Summary</h3>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          {[
-            { label: 'Total Audit Cycles', value: audits.length, icon: 'fact_check', color: 'text-blue-600 bg-blue-100' },
-            { label: 'Completed Cycles', value: audits.filter(a => a.status === 'Completed').length, icon: 'check_circle', color: 'text-green-600 bg-green-100' },
-            { label: 'Pending Review', value: audits.filter(a => a.status !== 'Completed').length, icon: 'pending', color: 'text-orange-600 bg-orange-100' }
-          ].map(stat => (
-            <div key={stat.label} className="flex items-center gap-4 p-4 rounded-xl border border-outline-variant/20 bg-surface-container-low dark:bg-surface-container-high/20">
-              <div className={`w-10 h-10 rounded-xl flex items-center justify-center shrink-0 ${stat.color}`}>
-                <span className="material-symbols-outlined text-[20px]">{stat.icon}</span>
-              </div>
-              <div>
-                <p className="text-xl font-bold text-on-surface">{stat.value}</p>
-                <p className="text-xs text-on-surface-variant">{stat.label}</p>
-              </div>
-            </div>
-          ))}
         </div>
       </div>
     </div>

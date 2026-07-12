@@ -14,6 +14,8 @@ export default function ResourceBooking() {
   const [view, setView] = useState('calendar');
   const [showBookModal, setShowBookModal] = useState(false);
   const [selectedBooking, setSelectedBooking] = useState(null);
+  const [currentDate, setCurrentDate] = useState(new Date(2026, 6, 12)); // Defaults to July 12, 2026
+  const [calendarSubView, setCalendarSubView] = useState('Month'); // Month, Week, Day
 
   // Form state
   const [form, setForm] = useState({
@@ -27,6 +29,35 @@ export default function ResourceBooking() {
   });
 
   const bookableAssets = assets.filter(a => a.bookable);
+
+  // Date Navigation Handlers
+  const handlePrev = () => {
+    const newD = new Date(currentDate);
+    if (calendarSubView === 'Month') {
+      newD.setMonth(currentDate.getMonth() - 1);
+    } else if (calendarSubView === 'Week') {
+      newD.setDate(currentDate.getDate() - 7);
+    } else if (calendarSubView === 'Day') {
+      newD.setDate(currentDate.getDate() - 1);
+    }
+    setCurrentDate(newD);
+  };
+
+  const handleNext = () => {
+    const newD = new Date(currentDate);
+    if (calendarSubView === 'Month') {
+      newD.setMonth(currentDate.getMonth() + 1);
+    } else if (calendarSubView === 'Week') {
+      newD.setDate(currentDate.getDate() + 7);
+    } else if (calendarSubView === 'Day') {
+      newD.setDate(currentDate.getDate() + 1);
+    }
+    setCurrentDate(newD);
+  };
+
+  const handleToday = () => {
+    setCurrentDate(new Date(2026, 6, 12)); // July 12, 2026
+  };
 
   // Overlap Detection Helper
   const checkOverlap = (resourceId, date, startStr, endStr) => {
@@ -188,54 +219,229 @@ export default function ResourceBooking() {
 
       {/* Main View Area */}
       {view === 'calendar' ? (
-        /* Weekly/Monthly Grid calendar view */
-        <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl shadow-sm overflow-hidden p-6 space-y-4">
-          <div className="flex items-center justify-between border-b border-outline-variant/20 pb-4">
-            <h3 className="font-bold text-on-surface text-lg">Calendar Schedule</h3>
-            <div className="flex items-center gap-1">
-              <span className="w-3 h-3 bg-blue-500 rounded-full inline-block"></span>
-              <span className="text-xs text-on-surface-variant mr-4">Upcoming</span>
-              <span className="w-3 h-3 bg-red-400 rounded-full inline-block"></span>
-              <span className="text-xs text-on-surface-variant">Cancelled</span>
+        /* Weekly/Monthly/Daily Grid calendar view */
+        <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl shadow-sm overflow-hidden p-6 space-y-6">
+          {/* Sub-view headers & Navigation Controls */}
+          <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 border-b border-outline-variant/20 pb-6">
+            <div className="flex items-center gap-3">
+              <button 
+                onClick={handlePrev}
+                className="w-10 h-10 rounded-xl bg-surface-container-high hover:bg-outline-variant transition-colors flex items-center justify-center border border-outline-variant/30"
+              >
+                <span className="material-symbols-outlined text-[20px]">chevron_left</span>
+              </button>
+              <button 
+                onClick={handleToday}
+                className="px-4 py-2 rounded-xl bg-surface-container-high text-xs font-bold hover:bg-outline-variant transition-colors border border-outline-variant/30 text-on-surface"
+              >
+                Today
+              </button>
+              <button 
+                onClick={handleNext}
+                className="w-10 h-10 rounded-xl bg-surface-container-high hover:bg-outline-variant transition-colors flex items-center justify-center border border-outline-variant/30"
+              >
+                <span className="material-symbols-outlined text-[20px]">chevron_right</span>
+              </button>
+              <h2 className="font-bold text-on-surface text-lg ml-2">
+                {calendarSubView === 'Month' && currentDate.toLocaleDateString('default', { month: 'long', year: 'numeric' })}
+                {calendarSubView === 'Week' && `Week of ${new Date(currentDate.setDate(currentDate.getDate() - currentDate.getDay())).toLocaleDateString('default', { month: 'short', day: 'numeric' })}, ${currentDate.getFullYear()}`}
+                {calendarSubView === 'Day' && currentDate.toLocaleDateString('default', { weekday: 'long', month: 'long', day: 'numeric', year: 'numeric' })}
+              </h2>
+            </div>
+
+            <div className="flex items-center gap-1.5 bg-surface-container-high rounded-xl p-1 shrink-0 self-stretch md:self-auto justify-between">
+              {['Month', 'Week', 'Day'].map((type) => (
+                <button
+                  key={type}
+                  onClick={() => setCalendarSubView(type)}
+                  className={`px-3 py-1.5 rounded-lg text-xs font-bold transition-all ${calendarSubView === type ? 'bg-white dark:bg-surface-container text-primary shadow-sm' : 'text-on-surface-variant hover:text-on-surface'}`}
+                >
+                  {type}
+                </button>
+              ))}
             </div>
           </div>
 
-          <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
-            <div>Mon</div>
-            <div>Tue</div>
-            <div>Wed</div>
-            <div>Thu</div>
-            <div>Fri</div>
-            <div>Sat</div>
-            <div>Sun</div>
-          </div>
+          {/* Render Month View */}
+          {calendarSubView === 'Month' && (() => {
+            const year = currentDate.getFullYear();
+            const month = currentDate.getMonth();
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            const firstDayIndex = new Date(year, month, 1).getDay(); // 0 = Sunday, 1 = Monday...
+            const offset = firstDayIndex === 0 ? 6 : firstDayIndex - 1; // Mon = 0, Sun = 6
 
-          {/* Simple grid mockup of a schedule calendar */}
-          <div className="grid grid-cols-7 gap-2 min-h-[300px]">
-            {Array.from({ length: 28 }).map((_, i) => {
-              const dayNum = i + 1;
-              const dateStr = `2026-07-${dayNum < 10 ? '0' + dayNum : dayNum}`;
-              const dayBookings = bookings.filter(b => b.startDate.startsWith(dateStr));
-              
-              return (
-                <div key={i} className="border border-outline-variant/25 rounded-xl p-2 bg-surface-container-low dark:bg-surface-container-high/40 flex flex-col justify-between min-h-[96px] hover:border-primary/50 transition-colors">
-                  <span className="font-semibold text-xs text-on-surface-variant text-left">{dayNum}</span>
-                  <div className="space-y-1.5 my-2 flex-1 flex flex-col justify-end">
-                    {dayBookings.map((b, idx) => (
-                      <div 
-                        key={idx}
-                        onClick={() => setSelectedBooking(b)}
-                        className={`text-[9px] font-bold p-1 rounded cursor-pointer truncate ${b.status === 'Cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200 line-through' : 'bg-primary-container text-on-primary-container border-l-2 border-primary'}`}
-                        title={`${b.resourceName} (${b.employeeName})`}
-                      >
-                        {b.resourceName.slice(0, 10)}...
-                      </div>
-                    ))}
-                  </div>
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-7 gap-2 text-center text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                  <div>Mon</div>
+                  <div>Tue</div>
+                  <div>Wed</div>
+                  <div>Thu</div>
+                  <div>Fri</div>
+                  <div>Sat</div>
+                  <div>Sun</div>
                 </div>
-              );
-            })}
-          </div>
+
+                <div className="grid grid-cols-7 gap-2 min-h-[350px]">
+                  {/* Empty cells before month start */}
+                  {Array.from({ length: offset }).map((_, idx) => (
+                    <div key={`empty-${idx}`} className="rounded-xl bg-surface-container-low/20 border border-transparent min-h-[96px]" />
+                  ))}
+
+                  {/* Calendar Days */}
+                  {Array.from({ length: daysInMonth }).map((_, idx) => {
+                    const dayNum = idx + 1;
+                    const dateStr = `${year}-${String(month + 1).padStart(2, '0')}-${String(dayNum).padStart(2, '0')}`;
+                    const dayBookings = bookings.filter(b => b.startDate.startsWith(dateStr));
+
+                    return (
+                      <div 
+                        key={`day-${dayNum}`}
+                        onClick={() => {
+                          setCurrentDate(new Date(year, month, dayNum));
+                          setCalendarSubView('Day');
+                        }}
+                        className="border border-outline-variant/25 rounded-xl p-2 bg-surface-container-low dark:bg-surface-container-high/40 flex flex-col justify-between min-h-[96px] hover:border-primary/50 cursor-pointer transition-colors"
+                      >
+                        <span className="font-semibold text-xs text-on-surface-variant text-left">{dayNum}</span>
+                        <div className="space-y-1 my-2 flex-1 flex flex-col justify-end">
+                          {dayBookings.slice(0, 3).map((b, bIdx) => (
+                            <div 
+                              key={bIdx}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedBooking(b);
+                              }}
+                              className={`text-[9px] font-bold p-1 rounded cursor-pointer truncate ${b.status === 'Cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200 line-through' : 'bg-primary-container text-on-primary-container border-l-2 border-primary'}`}
+                              title={`${b.resourceName} (${b.employeeName})`}
+                            >
+                              {b.resourceName}
+                            </div>
+                          ))}
+                          {dayBookings.length > 3 && (
+                            <div className="text-[8px] text-on-surface-variant font-bold text-center">
+                              +{dayBookings.length - 3} more
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Render Week View */}
+          {calendarSubView === 'Week' && (() => {
+            const startOfWeek = new Date(currentDate);
+            startOfWeek.setDate(currentDate.getDate() - currentDate.getDay() + (currentDate.getDay() === 0 ? -6 : 1)); // Mon start
+
+            return (
+              <div className="space-y-4">
+                <div className="grid grid-cols-7 gap-3 text-center text-xs font-bold text-on-surface-variant uppercase tracking-wider mb-2">
+                  <div>Mon</div>
+                  <div>Tue</div>
+                  <div>Wed</div>
+                  <div>Thu</div>
+                  <div>Fri</div>
+                  <div>Sat</div>
+                  <div>Sun</div>
+                </div>
+
+                <div className="grid grid-cols-7 gap-3 min-h-[350px]">
+                  {Array.from({ length: 7 }).map((_, i) => {
+                    const dayDate = new Date(startOfWeek);
+                    dayDate.setDate(startOfWeek.getDate() + i);
+                    const dateStr = `${dayDate.getFullYear()}-${String(dayDate.getMonth() + 1).padStart(2, '0')}-${String(dayDate.getDate()).padStart(2, '0')}`;
+                    const dayBookings = bookings.filter(b => b.startDate.startsWith(dateStr));
+
+                    return (
+                      <div 
+                        key={i}
+                        onClick={() => {
+                          setCurrentDate(dayDate);
+                          setCalendarSubView('Day');
+                        }}
+                        className="border border-outline-variant/25 rounded-xl p-3 bg-surface-container-low dark:bg-surface-container-high/40 flex flex-col min-h-[250px] hover:border-primary/50 cursor-pointer transition-colors"
+                      >
+                        <div className="flex justify-between items-baseline mb-2">
+                          <span className="font-bold text-sm text-on-surface">{dayDate.getDate()}</span>
+                          <span className="text-[10px] text-on-surface-variant">{dayDate.toLocaleDateString('default', { month: 'short' })}</span>
+                        </div>
+                        <div className="space-y-1.5 flex-1 overflow-y-auto">
+                          {dayBookings.map((b, bIdx) => (
+                            <div 
+                              key={bIdx}
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setSelectedBooking(b);
+                              }}
+                              className={`text-[9px] font-bold p-1.5 rounded cursor-pointer ${b.status === 'Cancelled' ? 'bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200 line-through' : 'bg-primary-container text-on-primary-container border-l-2 border-primary'}`}
+                              title={`${b.resourceName} (${b.employeeName})`}
+                            >
+                              <div className="truncate">{b.resourceName}</div>
+                              <div className="text-[8px] opacity-75 font-mono">{b.startDate.split('T')[1].slice(0, 5)}</div>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            );
+          })()}
+
+          {/* Render Day View */}
+          {calendarSubView === 'Day' && (() => {
+            const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+            const dayBookings = bookings.filter(b => b.startDate.startsWith(dateStr));
+            const hours = Array.from({ length: 11 }).map((_, i) => 8 + i); // 8 AM to 6 PM
+
+            return (
+              <div className="border border-outline-variant/30 rounded-xl divide-y divide-outline-variant/20 overflow-hidden bg-surface-container-low/20">
+                {hours.map((hour) => {
+                  const timeStr = `${String(hour).padStart(2, '0')}:00`;
+                  const hourBookings = dayBookings.filter(b => {
+                    const startHour = parseInt(b.startDate.split('T')[1].split(':')[0]);
+                    const endHour = parseInt(b.endDate.split('T')[1].split(':')[0]);
+                    return hour >= startHour && hour < endHour;
+                  });
+
+                  return (
+                    <div key={hour} className="flex min-h-[64px] hover:bg-surface-container-low/50 transition-colors">
+                      <div className="w-20 p-3 text-right text-xs font-bold text-on-surface-variant font-mono border-r border-outline-variant/20 flex items-center justify-end bg-surface-container-low">
+                        {hour > 12 ? `${hour - 12} PM` : (hour === 12 ? '12 PM' : `${hour} AM`)}
+                      </div>
+                      <div className="flex-1 p-2 flex gap-2 overflow-x-auto">
+                        {hourBookings.map((b, idx) => (
+                          <div
+                            key={idx}
+                            onClick={() => setSelectedBooking(b)}
+                            className={`flex-1 min-w-[200px] max-w-[400px] p-2.5 rounded-lg border-l-4 shadow-sm flex flex-col justify-between cursor-pointer transition-transform hover:scale-[1.01] ${b.status === 'Cancelled' ? 'bg-red-50 text-red-800 border-red-400 line-through dark:bg-red-950/20' : 'bg-primary-container text-on-primary-container border-primary'}`}
+                          >
+                            <div>
+                              <div className="text-xs font-bold truncate">{b.resourceName}</div>
+                              <div className="text-[10px] opacity-80 mt-0.5">Reserved by: {b.employeeName}</div>
+                            </div>
+                            <div className="text-[9px] opacity-75 font-mono mt-1">
+                              {b.startDate.split('T')[1].slice(0, 5)} - {b.endDate.split('T')[1].slice(0, 5)}
+                            </div>
+                          </div>
+                        ))}
+                        {hourBookings.length === 0 && (
+                          <div className="flex-1 flex items-center px-4 text-xs text-on-surface-variant/40 italic">
+                            No reservations scheduled
+                          </div>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            );
+          })()}
         </div>
       ) : (
         /* List / Table View */

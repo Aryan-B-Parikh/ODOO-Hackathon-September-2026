@@ -16,18 +16,25 @@ export default function Signup() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
-  const handleSignup = (e) => {
+  const handleSignup = async (e) => {
     e.preventDefault();
     if (!name || !email || !password) {
       setError("Please fill in all required fields.");
       return;
     }
 
+    // Password Complexity Validation
+    const passwordRegex = /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[@$!%*?&#])[A-Za-z\d@$!%*?&#]{8,}$/;
+    if (!passwordRegex.test(password)) {
+      setError("Password must be at least 8 characters long and contain at least one uppercase letter, one lowercase letter, one number, and one special character.");
+      return;
+    }
+
     setLoading(true);
     setError("");
 
-    setTimeout(() => {
-      const ok = signup({
+    try {
+      const ok = await signup({
         name,
         email,
         password,
@@ -43,9 +50,12 @@ export default function Signup() {
           navigate('/login');
         }, 2000);
       } else {
-        setError("A user with this email address already exists.");
+        setError("A user account with this email address already exists.");
       }
-    }, 1000);
+    } catch (err) {
+      setLoading(false);
+      setError(err.message || "An error occurred during signup.");
+    }
   };
 
   return (

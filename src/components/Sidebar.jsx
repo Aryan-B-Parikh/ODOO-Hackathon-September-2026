@@ -54,7 +54,7 @@ export default function Sidebar() {
         <NavItem to="/assets" icon="inventory_2" label="Assets" />
         <NavItem to="/maintenance" icon="build" label="Maintenance" />
 
-        {user.role === 'Admin' && (
+        {(user.role === 'Admin' || user.role === 'Auditor') && (
           <NavItem to="/audit" icon="fact_check" label="Audit" />
         )}
 

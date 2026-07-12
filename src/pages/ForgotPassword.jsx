@@ -5,16 +5,31 @@ export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!email) return;
 
     setLoading(true);
-    setTimeout(() => {
-      setLoading(false);
+    setError('');
+
+    try {
+      const res = await fetch('http://localhost:5050/api/auth/forgot-password', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email })
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error || 'Failed to request reset link.');
+      }
       setSubmitted(true);
-    }, 1000);
+    } catch (err) {
+      setError(err.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -24,6 +39,11 @@ export default function ForgotPassword() {
       <div className="floating-blob w-[500px] h-[500px] bg-secondary-container bottom-[-15%] right-[-10%] rounded-full absolute filter blur-[80px] opacity-40 z-0 animate-pulse" style={{ animationDelay: '-5s' }}></div>
 
       <main className="w-full max-w-[500px] bg-surface-container-lowest rounded-enterprise shadow-2xl p-8 md:p-12 relative z-10 border border-outline-variant/30 flex flex-col justify-center">
+        {error && (
+          <div className="p-4 bg-error-container text-error rounded-xl text-body-md text-center border border-error/20 mb-4">
+            {error}
+          </div>
+        )}
         <div className="mb-6 flex justify-center">
           <div className="w-12 h-12 bg-primary-container rounded-xl flex items-center justify-center text-on-primary">
             <span className="material-symbols-outlined text-3xl font-bold">lock_open</span>
