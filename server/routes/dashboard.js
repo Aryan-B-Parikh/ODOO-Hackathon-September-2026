@@ -5,9 +5,14 @@ import { authMiddleware } from '../middleware/auth.js';
 const router = express.Router();
 
 // GET dashboard statistics & activity logs
+// Optional query param: ?days=30  (limits data to last N days)
 router.get('/', authMiddleware, async (req, res) => {
   try {
-    const totalAssets = await prisma.asset.count({ where: { isDeleted: false } });
+    const days = parseInt(req.query.days) || null;
+    const since = days ? new Date(Date.now() - days * 24 * 60 * 60 * 1000) : null;
+    const dateFilter = since ? { gte: since } : undefined;
+
+    const totalAssets = await prisma.asset.count({ where: { isDeleted: false, ...(since && { createdAt: dateFilter }) } });
     
     const assetsWithCost = await prisma.asset.findMany({
       where: { isDeleted: false, NOT: { acquisitionCost: null } },

@@ -38,9 +38,10 @@ export default function OrganizationSetup() {
   const [showColMenu, setShowColMenu] = useState(false);
 
   // Form states for Modal
+  const [error, setError] = useState('');
   const [deptForm, setDeptForm] = useState({ name: '', code: '', parentDepartment: 'None', manager: '', status: 'Active' });
   const [catForm, setCatForm] = useState({ name: '', code: '', customFields: [] });
-  const [empForm, setEmpForm] = useState({ name: '', email: '', password: 'password123', role: 'Employee', phone: '', status: 'Active', department: 'None', manager: 'None' });
+  const [empForm, setEmpForm] = useState({ name: '', email: '', password: 'password123', role: 'Employee', phone: '', status: 'Active', department: 'None', manager: 'None', secondAdminSignature: '' });
 
   // Temp state for Category custom field builder
   const [newFieldName, setNewFieldName] = useState('');
@@ -96,48 +97,55 @@ export default function OrganizationSetup() {
 
   const handleOpenAddModal = () => {
     setEditingItem(null);
+    setError('');
     setDeptForm({ name: '', code: '', parentDepartment: 'None', manager: '', status: 'Active' });
     setCatForm({ name: '', code: '', customFields: [] });
-    setEmpForm({ name: '', email: '', password: 'password123', role: 'Employee', phone: '', status: 'Active', department: 'None', manager: 'None' });
+    setEmpForm({ name: '', email: '', password: 'password123', role: 'Employee', phone: '', status: 'Active', department: 'None', manager: 'None', secondAdminSignature: '' });
     setShowModal(true);
   };
 
   const handleOpenEditModal = (item, type) => {
     setEditingItem(item);
+    setError('');
     if (type === 'departments') {
       setDeptForm({ name: item.name, code: item.code, parentDepartment: item.parentDepartment || 'None', manager: item.manager || '', status: item.status || 'Active' });
     } else if (type === 'categories') {
       setCatForm({ name: item.name, code: item.code, customFields: item.customFields || [] });
     } else if (type === 'employees') {
-      setEmpForm({ name: item.name, email: item.email, password: item.password || 'password123', role: item.role || 'Employee', phone: item.phone || '', status: item.status || 'Active', department: item.department || 'None', manager: item.manager || 'None' });
+      setEmpForm({ name: item.name, email: item.email, password: item.password || 'password123', role: item.role || 'Employee', phone: item.phone || '', status: item.status || 'Active', department: item.department || 'None', manager: item.manager || 'None', secondAdminSignature: '' });
     }
     setShowModal(true);
   };
 
-  const handleSave = () => {
-    if (activeTab === 'departments') {
-      if (!deptForm.name || !deptForm.code) return;
-      if (editingItem) {
-        updateDepartment(editingItem.id, deptForm);
-      } else {
-        addDepartment(deptForm);
+  const handleSave = async () => {
+    setError('');
+    try {
+      if (activeTab === 'departments') {
+        if (!deptForm.name || !deptForm.code) return;
+        if (editingItem) {
+          await updateDepartment(editingItem.id, deptForm);
+        } else {
+          await addDepartment(deptForm);
+        }
+      } else if (activeTab === 'categories') {
+        if (!catForm.name || !catForm.code) return;
+        if (editingItem) {
+          await updateCategory(editingItem.id, catForm);
+        } else {
+          await addCategory(catForm);
+        }
+      } else if (activeTab === 'employees') {
+        if (!empForm.name || !empForm.email) return;
+        if (editingItem) {
+          await updateUser(editingItem.email, empForm);
+        } else {
+          await signup(empForm);
+        }
       }
-    } else if (activeTab === 'categories') {
-      if (!catForm.name || !catForm.code) return;
-      if (editingItem) {
-        updateCategory(editingItem.id, catForm);
-      } else {
-        addCategory(catForm);
-      }
-    } else if (activeTab === 'employees') {
-      if (!empForm.name || !empForm.email) return;
-      if (editingItem) {
-        updateUser(editingItem.email, empForm);
-      } else {
-        signup(empForm);
-      }
+      setShowModal(false);
+    } catch (err) {
+      setError(err.message || 'An error occurred during save.');
     }
-    setShowModal(false);
   };
 
   const handleDelete = (id, type) => {
@@ -577,6 +585,13 @@ export default function OrganizationSetup() {
               </button>
             </div>
 
+            {error && (
+              <div className="p-3 mb-4 bg-error-container text-error rounded-xl text-xs font-semibold border border-error/20 flex items-start gap-2 animate-fadeIn">
+                <span className="material-symbols-outlined text-[16px] shrink-0">error</span>
+                <span>{error}</span>
+              </div>
+            )}
+
             {/* Department Form Fields */}
             {activeTab === 'departments' && (
               <div className="space-y-4">
@@ -753,7 +768,7 @@ export default function OrganizationSetup() {
                     onChange={e => setEmpForm(prev => ({ ...prev, email: e.target.value }))}
                   />
                 </div>
-                <div>
+                 <div>
                   <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1.5">Requested Role</label>
                   <select 
                     className="w-full px-4 py-2.5 rounded-xl border border-outline-variant bg-surface-container-low dark:bg-surface-container text-sm focus:ring-2 focus:ring-primary/20 focus:border-primary outline-none text-on-surface"
@@ -768,6 +783,23 @@ export default function OrganizationSetup() {
                     <option value="Viewer">Viewer</option>
                   </select>
                 </div>
+
+                {empForm.role === 'Admin' && editingItem?.role !== 'Admin' && (
+                  <div className="p-3.5 bg-error-container/5 rounded-xl border border-error/20 space-y-2 animate-fadeIn">
+                    <label className="text-xs font-bold uppercase tracking-wider text-error block">Co-signing Admin Email *</label>
+                    <input 
+                      type="email" 
+                      required
+                      placeholder="secondary-admin@company.com"
+                      className="w-full px-4 py-2.5 rounded-xl border border-error/50 bg-white dark:bg-surface-container text-sm focus:ring-2 focus:ring-error/20 outline-none text-on-surface"
+                      value={empForm.secondAdminSignature || ''}
+                      onChange={e => setEmpForm(prev => ({ ...prev, secondAdminSignature: e.target.value }))}
+                    />
+                    <p className="text-[10px] leading-relaxed text-on-surface-variant">
+                      ⚠️ <strong>Dual-Authorization Policy:</strong> Promoting any member to Administrator requires co-signature verification from an active secondary Administrator.
+                    </p>
+                  </div>
+                )}
                 <div>
                   <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1.5">Phone Number</label>
                   <input 

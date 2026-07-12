@@ -5,6 +5,7 @@ export default function Dashboard() {
   const { assets, tickets, apiCall } = useContext(AppContext);
   const [stats, setStats] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [daysFilter, setDaysFilter] = useState(null); // null = all-time, 30 = last 30 days
 
   const [monitorTab, setMonitorTab] = useState('activity');
   const [alertTab, setAlertTab] = useState('overdue');
@@ -13,7 +14,8 @@ export default function Dashboard() {
     let active = true;
     const fetchStats = async () => {
       try {
-        const data = await apiCall('/dashboard');
+        const url = daysFilter ? `/dashboard?days=${daysFilter}` : '/dashboard';
+        const data = await apiCall(url);
         if (active) {
           setStats(data);
           setLoading(false);
@@ -31,7 +33,7 @@ export default function Dashboard() {
       active = false; 
       clearInterval(interval);
     };
-  }, [assets, tickets]);
+  }, [assets, tickets, daysFilter]);
 
   // Dynamic calculations based on state + API metrics
   const totalAssetsCount = stats ? stats.totalAssets : assets.length;
@@ -98,13 +100,25 @@ export default function Dashboard() {
           <p className="text-on-surface-variant font-body-lg text-body-lg">Real-time status of your global asset ecosystem.</p>
         </div>
         <div className="flex gap-3">
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-high text-on-surface font-body-md hover:bg-outline-variant transition-all border border-outline-variant/30">
-            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">calendar_month</span>
-            <span>Last 30 Days</span>
+          <button
+            onClick={() => setDaysFilter(prev => prev === 30 ? null : 30)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl font-body-md hover:bg-outline-variant transition-all border ${
+              daysFilter === 30
+                ? 'bg-primary text-on-primary border-primary/30 shadow-sm shadow-primary/20'
+                : 'bg-surface-container-high text-on-surface border-outline-variant/30'
+            }`}
+            title={daysFilter === 30 ? 'Showing last 30 days — click to reset' : 'Filter to last 30 days'}
+          >
+            <span className="material-symbols-outlined text-[20px]">calendar_month</span>
+            <span>{daysFilter === 30 ? 'Last 30 Days ✓' : 'Last 30 Days'}</span>
           </button>
-          <button className="flex items-center gap-2 px-4 py-2 rounded-xl bg-surface-container-high text-on-surface font-body-md hover:bg-outline-variant transition-all border border-outline-variant/30">
-            <span className="material-symbols-outlined text-[20px] text-on-surface-variant">download</span>
-            <span>Export</span>
+          <button
+            className="flex items-center gap-2 px-4 py-2 rounded-xl bg-primary text-on-primary font-body-md hover:opacity-90 transition-all border border-primary/30 shadow-sm shadow-primary/20"
+            onClick={() => window.open('http://localhost:5050/api/reports/export/csv', '_blank')}
+            title="Download full asset registry as CSV"
+          >
+            <span className="material-symbols-outlined text-[20px]">download</span>
+            <span>Export CSV</span>
           </button>
         </div>
       </div>
@@ -182,19 +196,52 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* Secondary Stats Chips */}
+      {stats && (
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+          <div className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-emerald-50 border border-emerald-200 dark:bg-emerald-900/10 dark:border-emerald-800/30">
+            <div className="w-9 h-9 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[20px] text-emerald-700">assignment_returned</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-emerald-700/80">Upcoming Returns</p>
+              <p className="text-lg font-extrabold text-emerald-800">{stats.upcomingReturns ? stats.upcomingReturns.length : 0} <span className="text-xs font-semibold text-emerald-600">in next 7 days</span></p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-purple-50 border border-purple-200 dark:bg-purple-900/10 dark:border-purple-800/30">
+            <div className="w-9 h-9 rounded-lg bg-purple-100 dark:bg-purple-900/30 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[20px] text-purple-700">move_up</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-purple-700/80">Pending Transfers</p>
+              <p className="text-lg font-extrabold text-purple-800">{stats.pendingTransfers ? stats.pendingTransfers.length : 0} <span className="text-xs font-semibold text-purple-600">awaiting approval</span></p>
+            </div>
+          </div>
+          <div className="flex items-center gap-3 px-5 py-3.5 rounded-xl bg-blue-50 border border-blue-200 dark:bg-blue-900/10 dark:border-blue-800/30">
+            <div className="w-9 h-9 rounded-lg bg-blue-100 dark:bg-blue-900/30 flex items-center justify-center shrink-0">
+              <span className="material-symbols-outlined text-[20px] text-blue-700">event_available</span>
+            </div>
+            <div className="min-w-0">
+              <p className="text-[11px] font-bold uppercase tracking-wider text-blue-700/80">Active Bookings</p>
+              <p className="text-lg font-extrabold text-blue-800">{stats.activeBookings ? stats.activeBookings.length : 0} <span className="text-xs font-semibold text-blue-600">resources reserved</span></p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Quick Operations Actions Grid */}
       <div className="bg-surface-container-lowest border border-outline-variant/30 rounded-2xl p-6 shadow-sm">
         <h3 className="text-on-surface font-bold text-sm tracking-wide uppercase font-label-caps mb-4">Quick Operations</h3>
         <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-          <a href="/assets" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-primary-container/20 border border-outline-variant/30 hover:border-primary/30 transition-all text-center group">
+          <a href="/assets?action=add" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-primary-container/20 border border-outline-variant/30 hover:border-primary/30 transition-all text-center group">
             <span className="material-symbols-outlined text-[28px] text-primary group-hover:scale-110 transition-transform">add_circle</span>
             <span className="text-xs font-bold text-on-surface">Register Asset</span>
           </a>
-          <a href="/assets" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-secondary-container/20 border border-outline-variant/30 hover:border-secondary/30 transition-all text-center group">
+          <a href="/allocation" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-secondary-container/20 border border-outline-variant/30 hover:border-secondary/30 transition-all text-center group">
             <span className="material-symbols-outlined text-[28px] text-secondary group-hover:scale-110 transition-transform">assignment_turned_in</span>
             <span className="text-xs font-bold text-on-surface">Checkout Asset</span>
           </a>
-          <a href="/bookings" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-tertiary-container/20 border border-outline-variant/30 hover:border-tertiary/30 transition-all text-center group">
+          <a href="/booking" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-tertiary-container/20 border border-outline-variant/30 hover:border-tertiary/30 transition-all text-center group">
             <span className="material-symbols-outlined text-[28px] text-tertiary group-hover:scale-110 transition-transform">calendar_month</span>
             <span className="text-xs font-bold text-on-surface">Book Resource</span>
           </a>
@@ -202,7 +249,7 @@ export default function Dashboard() {
             <span className="material-symbols-outlined text-[28px] text-error group-hover:scale-110 transition-transform">build_circle</span>
             <span className="text-xs font-bold text-on-surface">Log Repair</span>
           </a>
-          <a href="/settings" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-primary-container/20 border border-outline-variant/30 hover:border-primary/30 transition-all text-center group col-span-2 sm:col-span-1">
+          <a href="/organization" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-primary-container/20 border border-outline-variant/30 hover:border-primary/30 transition-all text-center group col-span-2 sm:col-span-1">
             <span className="material-symbols-outlined text-[28px] text-on-surface-variant group-hover:scale-110 transition-transform">person_add</span>
             <span className="text-xs font-bold text-on-surface">Invite Employee</span>
           </a>

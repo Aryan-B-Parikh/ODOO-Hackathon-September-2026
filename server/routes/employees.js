@@ -2,6 +2,7 @@ import express from 'express';
 import bcrypt from 'bcryptjs';
 import prisma from '../db.js';
 import { authMiddleware, checkRole } from '../middleware/auth.js';
+import { sendAdminPromotionEmail } from '../mailer.js';
 
 const router = express.Router();
 
@@ -232,6 +233,13 @@ router.put('/:id', authMiddleware, checkRole(['Admin']), async (req, res) => {
                 throw { status: 403, message: "Invalid Sign-off: The secondary signature must belong to a valid, active Administrator other than the promoting Admin." };
               }
               console.log(`[JOINT SIGN-OFF AUDIT] Joint Admin Promotion Approved. Initiator: ${req.user.email}, Co-Signer: ${secondAdminSig}, Target: ${employee.email}`);
+              // Fire audit email (non-blocking, stored for later in mailer)
+              sendAdminPromotionEmail({
+                to: employee.email,
+                promotedName: employee.name,
+                initiatorEmail: req.user.email,
+                coSignerEmail: secondAdminSig
+              }).catch(console.error);
             }
 
             // Delete previous roles

@@ -1,6 +1,11 @@
 import express from 'express';
 import prisma from '../db.js';
 import { authMiddleware, checkRole } from '../middleware/auth.js';
+import {
+  sendAllocationEmail,
+  sendReturnConfirmEmail,
+  sendTransferRequestEmail
+} from '../mailer.js';
 
 const router = express.Router();
 
@@ -187,6 +192,16 @@ router.post('/', authMiddleware, checkRole(['Admin', 'Asset Manager']), async (r
       checkinNotes: '',
       status: 'Active'
     });
+
+    // Fire email notification (non-blocking)
+    if (targetEmployee && targetEmployee.email) {
+      sendAllocationEmail({
+        to: targetEmployee.email,
+        employeeName: targetEmployee.name,
+        assetName: asset.name,
+        expectedReturn: expectedReturn || 'Not specified'
+      }).catch(console.error);
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to allocate asset.' });
@@ -238,6 +253,16 @@ router.post('/:id/return', authMiddleware, checkRole(['Admin', 'Asset Manager'])
       message: 'Asset returned successfully.',
       status: 'Returned'
     });
+
+    // Fire return confirmation email (non-blocking)
+    if (alloc.employee && alloc.employee.email) {
+      sendReturnConfirmEmail({
+        to: alloc.employee.email,
+        employeeName: alloc.employee.name,
+        assetName: alloc.asset.name,
+        returnDate: new Date().toLocaleDateString()
+      }).catch(console.error);
+    }
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to return asset.' });
@@ -286,6 +311,27 @@ router.post('/transfers', authMiddleware, async (req, res) => {
       message: 'Transfer request submitted.',
       transferId: transfer.id
     });
+
+    // Notify admins about the pending transfer (non-blocking)
+    try {
+      const admins = await prisma.user.findMany({
+        where: {
+          status: 'ACTIVE',
+          isDeleted: false,
+          userRoles: { some: { role: { name: { equals: 'Admin', mode: 'insensitive' } } } }
+        },
+        select: { email: true }
+      });
+      const requestor = await prisma.employee.findUnique({ where: { id: req.user.employeeId } });
+      for (const admin of admins) {
+        sendTransferRequestEmail({
+          to: admin.email,
+          assetName: asset.name,
+          requestorName: requestor ? requestor.name : req.user.email,
+          targetName: targetEmp ? targetEmp.name : (targetDept ? targetDept.name : 'Unknown')
+        }).catch(console.error);
+      }
+    } catch (_) { /* silent — email is best-effort */ }
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to submit transfer request.' });
