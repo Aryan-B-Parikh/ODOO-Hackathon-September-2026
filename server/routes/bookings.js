@@ -2,6 +2,7 @@ import express from 'express';
 import crypto from 'crypto';
 import prisma from '../db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { logActivity } from '../utils/activity.js';
 
 const router = express.Router();
 
@@ -122,24 +123,36 @@ router.post('/', authMiddleware, async (req, res) => {
     }
 
     // Write all occurrences inside a single atomic transaction
-    const createdBookings = await prisma.$transaction(
-      occurrences.map(occ => 
-        prisma.resourceBooking.create({
-          data: {
-            assetId: resourceId,
-            bookedById: employee.id,
-            startTime: occ.start,
-            endTime: occ.end,
-            status: 'UPCOMING',
-            notes: purpose || '',
-            recurrenceRule: recurrence || 'None',
-            seriesId: compositeSeriesId,
-            organizationId: req.user.organizationId
-          },
-          include: { asset: true, bookedBy: true }
-        })
-      )
-    );
+    const createdBookings = await prisma.$transaction(async (tx) => {
+      const bkgs = await Promise.all(
+        occurrences.map(occ => 
+          tx.resourceBooking.create({
+            data: {
+              assetId: resourceId,
+              bookedById: employee.id,
+              startTime: occ.start,
+              endTime: occ.end,
+              status: 'UPCOMING',
+              notes: purpose || '',
+              recurrenceRule: recurrence || 'None',
+              seriesId: compositeSeriesId,
+              organizationId: req.user.organizationId
+            },
+            include: { asset: true, bookedBy: true }
+          })
+        )
+      );
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'CREATE_BOOKING',
+        entityType: 'ResourceBooking',
+        entityId: bkgs[0].id,
+        moduleName: 'BOOKINGS'
+      }, tx);
+
+      return bkgs;
+    });
 
     const mainBkg = createdBookings[0];
     res.status(201).json({
@@ -164,9 +177,19 @@ router.post('/', authMiddleware, async (req, res) => {
 router.post('/:id/cancel', authMiddleware, async (req, res) => {
   const { id } = req.params;
   try {
-    const updated = await prisma.resourceBooking.update({
-      where: { id },
-      data: { status: 'CANCELLED' }
+    const updated = await prisma.$transaction(async (tx) => {
+      const bkg = await tx.resourceBooking.update({
+        where: { id },
+        data: { status: 'CANCELLED' }
+      });
+      await logActivity({
+        userId: req.user.userId,
+        action: 'CANCEL_BOOKING',
+        entityType: 'ResourceBooking',
+        entityId: id,
+        moduleName: 'BOOKINGS'
+      }, tx);
+      return bkg;
     });
     res.json({ success: true, status: 'Cancelled', message: 'Booking cancelled successfully.' });
   } catch (error) {

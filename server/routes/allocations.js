@@ -6,6 +6,7 @@ import {
   sendReturnConfirmEmail,
   sendTransferRequestEmail
 } from '../mailer.js';
+import { logActivity } from '../utils/activity.js';
 
 const router = express.Router();
 
@@ -173,6 +174,16 @@ router.post('/', authMiddleware, checkRole(['Admin', 'Asset Manager']), async (r
         }
       });
 
+      // 3. Log Activity
+      await logActivity({
+        userId: req.user.userId,
+        action: 'CHECKOUT_ASSET',
+        entityType: 'AssetAllocation',
+        entityId: alloc.id,
+        newValue: { status: 'ALLOCATED', assignedTo: targetEmployee ? targetEmployee.email : (targetDepartment ? targetDepartment.name : 'Unknown') },
+        moduleName: 'ALLOCATIONS'
+      }, tx);
+
       return alloc;
     });
 
@@ -246,6 +257,16 @@ router.post('/:id/return', authMiddleware, checkRole(['Admin', 'Asset Manager'])
           condition: checkinCond
         }
       });
+
+      // 3. Log Activity
+      await logActivity({
+        userId: req.user.userId,
+        action: 'RETURN_ASSET',
+        entityType: 'AssetAllocation',
+        entityId: alloc.id,
+        newValue: { status: 'RETURNED', condition: checkinCond },
+        moduleName: 'ALLOCATIONS'
+      }, tx);
     });
 
     res.json({
@@ -295,15 +316,27 @@ router.post('/transfers', authMiddleware, async (req, res) => {
       });
     }
 
-    const transfer = await prisma.assetTransferRequest.create({
-      data: {
-        assetId,
-        requestorId: req.user.employeeId,
-        targetEmployeeId: targetEmp ? targetEmp.id : null,
-        targetDepartmentId: targetDept ? targetDept.id : null,
-        requestNotes: checkoutNotes,
-        organizationId: req.user.organizationId
-      }
+    const transfer = await prisma.$transaction(async (tx) => {
+      const tr = await tx.assetTransferRequest.create({
+        data: {
+          assetId,
+          requestorId: req.user.employeeId,
+          targetEmployeeId: targetEmp ? targetEmp.id : null,
+          targetDepartmentId: targetDept ? targetDept.id : null,
+          requestNotes: checkoutNotes,
+          organizationId: req.user.organizationId
+        }
+      });
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'SUBMIT_TRANSFER',
+        entityType: 'AssetTransferRequest',
+        entityId: tr.id,
+        moduleName: 'ALLOCATIONS'
+      }, tx);
+
+      return tr;
     });
 
     res.status(201).json({
@@ -415,6 +448,15 @@ router.post('/transfers/:id/action', authMiddleware, checkRole(['Admin', 'Asset 
           actionedAt: new Date()
         }
       });
+
+      // 5. Log Activity
+      await logActivity({
+        userId: req.user.userId,
+        action: 'APPROVE_TRANSFER',
+        entityType: 'AssetTransferRequest',
+        entityId: id,
+        moduleName: 'ALLOCATIONS'
+      }, tx);
     });
 
     res.json({ success: true, message: 'Transfer request approved.' });

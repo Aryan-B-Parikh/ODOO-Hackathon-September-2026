@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../db.js';
 import { authMiddleware } from '../middleware/auth.js';
+import { logActivity } from '../utils/activity.js';
 
 const router = express.Router();
 
@@ -137,6 +138,14 @@ router.post('/', authMiddleware, async (req, res) => {
         data: { status: 'UNDER_MAINTENANCE' }
       });
 
+      await logActivity({
+        userId: req.user.userId,
+        action: 'CREATE_MAINTENANCE',
+        entityType: 'MaintenanceRequest',
+        entityId: request.id,
+        moduleName: 'MAINTENANCE'
+      }, tx);
+
       return request;
     });
 
@@ -229,6 +238,14 @@ router.put('/:id', authMiddleware, async (req, res) => {
           }
         });
       }
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'UPDATE_MAINTENANCE',
+        entityType: 'MaintenanceRequest',
+        entityId: id,
+        moduleName: 'MAINTENANCE'
+      }, tx);
     });
 
     res.json({ success: true, message: 'Ticket updated successfully.' });
@@ -275,6 +292,15 @@ router.post('/:id/status', authMiddleware, async (req, res) => {
           data: { status: 'UNDER_MAINTENANCE' }
         });
       }
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'UPDATE_MAINTENANCE_STATUS',
+        entityType: 'MaintenanceRequest',
+        entityId: id,
+        newValue: { status },
+        moduleName: 'MAINTENANCE'
+      }, tx);
     });
 
     res.json({ success: true, message: `Ticket moved to ${status}.` });
@@ -299,16 +325,29 @@ router.post('/:id/comment', authMiddleware, async (req, res) => {
       return res.status(404).json({ error: 'Ticket not found.' });
     }
 
-    const log = await prisma.maintenanceWorkLog.create({
-      data: {
-        maintenanceRequestId: id,
-        technicianId: req.user.employeeId,
-        status: ticket.status,
-        notes: text,
-        laborHours: 0,
-        organizationId: req.user.organizationId
-      },
-      include: { technician: true }
+    const log = await prisma.$transaction(async (tx) => {
+      const createdLog = await tx.maintenanceWorkLog.create({
+        data: {
+          maintenanceRequestId: id,
+          technicianId: req.user.employeeId,
+          status: ticket.status,
+          notes: text,
+          laborHours: 0,
+          organizationId: req.user.organizationId
+        },
+        include: { technician: true }
+      });
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'ADD_MAINTENANCE_COMMENT',
+        entityType: 'MaintenanceRequest',
+        entityId: id,
+        newValue: { comment: text },
+        moduleName: 'MAINTENANCE'
+      }, tx);
+
+      return createdLog;
     });
 
     res.status(201).json({

@@ -2,6 +2,7 @@ import express from 'express';
 import prisma from '../db.js';
 import { authMiddleware, checkRole } from '../middleware/auth.js';
 import { uploadAssetFiles } from '../upload.js';
+import { logActivity } from '../utils/activity.js';
 
 const router = express.Router();
 
@@ -288,6 +289,15 @@ router.post('/', authMiddleware, checkRole(['Admin', 'Asset Manager']), async (r
         }
       }
 
+      await logActivity({
+        userId: req.user.userId,
+        action: 'CREATE_ASSET',
+        entityType: 'Asset',
+        entityId: dbAsset.id,
+        newValue: { name, category },
+        moduleName: 'ASSETS'
+      }, tx);
+
       return dbAsset;
     });
 
@@ -447,6 +457,15 @@ router.put('/:id', authMiddleware, checkRole(['Admin', 'Asset Manager']), async 
         }
       }
 
+      await logActivity({
+        userId: req.user.userId,
+        action: 'UPDATE_ASSET',
+        entityType: 'Asset',
+        entityId: id,
+        newValue: { name, status },
+        moduleName: 'ASSETS'
+      }, tx);
+
       return dbAsset;
     });
 
@@ -477,9 +496,18 @@ router.put('/:id', authMiddleware, checkRole(['Admin', 'Asset Manager']), async 
 router.delete('/:id', authMiddleware, checkRole(['Admin']), async (req, res) => {
   const { id } = req.params;
   try {
-    await prisma.asset.update({
-      where: { id },
-      data: { isDeleted: true, deletedAt: new Date() }
+    await prisma.$transaction(async (tx) => {
+      await tx.asset.update({
+        where: { id },
+        data: { isDeleted: true, deletedAt: new Date() }
+      });
+      await logActivity({
+        userId: req.user.userId,
+        action: 'DELETE_ASSET',
+        entityType: 'Asset',
+        entityId: id,
+        moduleName: 'ASSETS'
+      }, tx);
     });
     res.json({ success: true, message: 'Asset deleted successfully.' });
   } catch (error) {
