@@ -3,6 +3,8 @@ import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { AppProvider, AppContext } from './context/AppContext';
 import Layout from './components/Layout';
 import Login from './pages/Login';
+import Signup from './pages/Signup';
+import ForgotPassword from './pages/ForgotPassword';
 import Dashboard from './pages/Dashboard';
 import AssetDirectory from './pages/AssetDirectory';
 import MaintenanceKanban from './pages/MaintenanceKanban';
@@ -16,11 +18,17 @@ import Reports from './pages/Reports';
 import Notifications from './pages/Notifications';
 import ErrorStates from './pages/ErrorStates';
 
-const ProtectedRoute = ({ children }) => {
+const ProtectedRoute = ({ children, allowedRoles }) => {
   const { user } = useContext(AppContext);
   if (!user) {
     return <Navigate to="/login" replace />;
   }
+  
+  if (allowedRoles && !allowedRoles.includes(user.role)) {
+    // Redirect to dashboard or error page if unauthorized
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return children;
 };
 
@@ -28,6 +36,8 @@ function AppRoutes() {
   return (
     <Routes>
       <Route path="/login" element={<Login />} />
+      <Route path="/signup" element={<Signup />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
       <Route
         path="/dashboard"
         element={
@@ -61,7 +71,7 @@ function AppRoutes() {
       <Route
         path="/audit"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Admin']}>
             <Layout>
               <SystemAudit />
             </Layout>
@@ -71,7 +81,7 @@ function AppRoutes() {
       <Route
         path="/settings"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Admin']}>
             <Layout>
               <Settings />
             </Layout>
@@ -91,7 +101,7 @@ function AppRoutes() {
       <Route
         path="/organization"
         element={
-          <ProtectedRoute>
+          <ProtectedRoute allowedRoles={['Admin']}>
             <Layout>
               <OrganizationSetup />
             </Layout>

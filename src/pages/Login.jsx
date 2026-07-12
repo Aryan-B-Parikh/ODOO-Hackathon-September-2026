@@ -1,5 +1,5 @@
 import React, { useContext, useState } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, Link } from 'react-router-dom';
 import { AppContext } from '../context/AppContext';
 
 export default function Login() {
@@ -206,7 +206,7 @@ export default function Login() {
               <div className="space-y-2">
                 <div className="flex justify-between items-center">
                   <label className="block font-label-caps text-on-surface-variant font-semibold text-[12px] tracking-wider uppercase" htmlFor="password">Password</label>
-                  <a className="font-body-md text-primary hover:underline text-[13px] font-semibold" href="#forgot">Forgot password?</a>
+                  <Link className="font-body-md text-primary hover:underline text-[13px] font-semibold" to="/forgot-password">Forgot password?</Link>
                 </div>
                 <div className="relative">
                   <span className="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">lock</span>
@@ -264,8 +264,8 @@ export default function Login() {
             <div className="mt-8 text-center">
               <p className="font-body-md text-body-md text-on-surface-variant">
                 Don't have an enterprise account? 
-                <a className="text-primary font-bold hover:underline ml-1" href="#contact">Contact Sales</a> or 
-                <a className="text-primary font-bold hover:underline ml-1" href="#trial">Start Free Trial</a>
+                <Link className="text-primary font-bold hover:underline ml-1" to="/signup">Sign Up</Link> or 
+                <a className="text-primary font-bold hover:underline ml-1" href="#contact">Contact Sales</a>
               </p>
             </div>
             
