@@ -526,6 +526,10 @@ Commands represent explicit user intentions that mutate state.
 * **CloseAuditCycle:** (Actor: Admin) → Validates CanCloseAudit → Emits `AuditCycleClosed`.
 * **PromoteEmployee:** (Actor: Admin) → Applies Role Policy → Emits `RolePromoted`.
 * **DeactivateDepartment:** (Actor: Admin) → Validates no active dependencies → Emits `DepartmentDeactivated`.
+* **CreateDepartment:** (Actor: Admin) → Validates uniqueness → Emits `DepartmentCreated`.
+* **CreateEmployee:** (Actor: Admin) → Validates email uniqueness → Emits `EmployeeCreated`.
+* **RetireAsset:** (Actor: Asset Manager) → Validates not currently allocated → Emits `AssetRetired`.
+* **DisposeAsset:** (Actor: Asset Manager) → Validates retired/lost state → Emits `AssetDisposed`.
 
 ---
 
