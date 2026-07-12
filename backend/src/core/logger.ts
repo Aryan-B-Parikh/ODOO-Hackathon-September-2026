@@ -13,6 +13,7 @@
  */
 import pino from 'pino';
 import { pinoHttp } from 'pino-http';
+
 import { Config } from '../config/index.js';
 
 const isDev = Config.NODE_ENV === 'development';
@@ -25,7 +26,7 @@ export const logger = pino({
 
 export const httpLogger = pinoHttp({
   logger,
-  customProps: (req, res) => ({
+  customProps: (req, _res) => ({
     reqId: req.id,
   }),
 });

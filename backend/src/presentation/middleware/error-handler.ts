@@ -9,8 +9,9 @@
  * Maps exceptions to standard HTTP JSON responses.
  */
 import { Request, Response, NextFunction } from 'express';
-import { logger } from '../../core/logger.js';
 import { ZodError } from 'zod';
+
+import { logger } from '../../core/logger.js';
 
 export class AppError extends Error {
   constructor(public statusCode: number, message: string, public isOperational = true) {
@@ -32,7 +33,7 @@ export class ForbiddenError extends AppError {
   constructor(message = 'Forbidden') { super(403, message); }
 }
 
-export const globalErrorHandler = (err: Error, req: Request, res: Response, next: NextFunction) => {
+export const globalErrorHandler = (err: Error, req: Request, res: Response, _next: NextFunction) => {
   if (err instanceof ZodError) {
     logger.warn({ reqId: req.id, err }, 'Validation Error');
     res.status(400).json({ error: 'Validation Error', details: err.errors });

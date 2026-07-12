@@ -8,6 +8,7 @@
  * Defines Kubernetes-compatible /live and /ready endpoints.
  */
 import { Router } from 'express';
+
 import { Database } from '../../infrastructure/database/index.js';
 
 export const healthRouter = Router();

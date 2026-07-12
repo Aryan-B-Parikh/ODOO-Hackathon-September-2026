@@ -12,8 +12,9 @@
  * - Only implements connection logic, not schemas.
  */
 import mongoose from 'mongoose';
-import { logger } from '../../core/logger.js';
+
 import { Config } from '../../config/index.js';
+import { logger } from '../../core/logger.js';
 
 export const Database = {
   connect: async (): Promise<void> => {

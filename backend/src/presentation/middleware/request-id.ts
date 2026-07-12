@@ -7,14 +7,13 @@
  * Responsibility:
  * Injects a unique UUID into every incoming request for log correlation.
  */
-import { Request, Response, NextFunction } from 'express';
 import crypto from 'crypto';
 
-declare global {
-  namespace Express {
-    interface Request {
-      id: string;
-    }
+import { Request, Response, NextFunction } from 'express';
+
+declare module 'express-serve-static-core' {
+  interface Request {
+    id: string;
   }
 }
 

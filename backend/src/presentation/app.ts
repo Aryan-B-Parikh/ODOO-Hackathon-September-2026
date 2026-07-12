@@ -8,16 +8,19 @@
  * Configures the Express application pipeline (middleware order).
  * DOES NOT bind the port or connect to the database.
  */
-import express from 'express';
-import helmet from 'helmet';
-import cors from 'cors';
 import compression from 'compression';
 import cookieParser from 'cookie-parser';
-import { requestIdMiddleware } from './middleware/request-id.js';
-import { httpLogger } from '../core/logger.js';
-import { globalErrorHandler, NotFoundError } from './middleware/error-handler.js';
-import { healthRouter } from './routes/health.js';
+import cors from 'cors';
+import express from 'express';
+import helmet from 'helmet';
+
 import { Config } from '../config/index.js';
+import { httpLogger } from '../core/logger.js';
+
+import { globalErrorHandler, NotFoundError } from './middleware/error-handler.js';
+import { requestIdMiddleware } from './middleware/request-id.js';
+import { healthRouter } from './routes/health.js';
+
 
 export const app = express();
 

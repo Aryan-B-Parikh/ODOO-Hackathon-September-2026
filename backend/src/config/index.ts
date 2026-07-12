@@ -13,8 +13,8 @@
  * - No process.env usage allowed outside this file.
  * - Must crash on invalid startup.
  */
-import { z } from 'zod';
 import dotenv from 'dotenv';
+import { z } from 'zod';
 
 // Load variables from .env if present
 dotenv.config();
