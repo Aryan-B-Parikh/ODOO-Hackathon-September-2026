@@ -1,33 +1,39 @@
 /**
  * Multer file upload middleware for asset photos and documents.
- * Files are saved locally to /server/uploads/{photos|documents}/
- * Drop-in S3 replacement: swap diskStorage for multer-s3 later.
+ * Files are uploaded directly to AWS S3.
  */
 
 import multer from 'multer';
 import path from 'path';
-import fs from 'fs';
-import { fileURLToPath } from 'url';
+import multerS3 from 'multer-s3';
+import { S3Client } from '@aws-sdk/client-s3';
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const s3Configured = !!(process.env.AWS_ACCESS_KEY_ID && process.env.AWS_SECRET_ACCESS_KEY && process.env.AWS_S3_BUCKET);
 
-// Ensure upload directories exist
-const photosDir = path.join(__dirname, 'uploads', 'photos');
-const docsDir   = path.join(__dirname, 'uploads', 'documents');
-fs.mkdirSync(photosDir, { recursive: true });
-fs.mkdirSync(docsDir,   { recursive: true });
-
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    const isImage = file.mimetype.startsWith('image/');
-    cb(null, isImage ? photosDir : docsDir);
-  },
-  filename: (req, file, cb) => {
-    const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
-    const ext = path.extname(file.originalname);
-    cb(null, `${unique}${ext}`);
+const s3 = new S3Client({
+  region: process.env.AWS_REGION || 'us-east-1',
+  credentials: {
+    accessKeyId: process.env.AWS_ACCESS_KEY_ID || '',
+    secretAccessKey: process.env.AWS_SECRET_ACCESS_KEY || '',
   }
 });
+
+// Fallback to memory storage if S3 is not configured to avoid crashing
+const storage = s3Configured
+  ? multerS3({
+      s3: s3,
+      bucket: process.env.AWS_S3_BUCKET,
+      metadata: (req, file, cb) => {
+        cb(null, { fieldName: file.fieldname });
+      },
+      key: (req, file, cb) => {
+        const unique = `${Date.now()}-${Math.round(Math.random() * 1e6)}`;
+        const ext = path.extname(file.originalname);
+        const prefix = file.mimetype.startsWith('image/') ? 'photos' : 'documents';
+        cb(null, `${prefix}/${unique}${ext}`);
+      }
+    })
+  : multer.memoryStorage(); // Fallback for local dev without S3 credentials
 
 const fileFilter = (req, file, cb) => {
   const allowedImages = ['image/jpeg', 'image/png', 'image/webp', 'image/gif'];

@@ -172,3 +172,38 @@ export const sendAdminPromotionEmail = async ({ to, promotedName, initiatorEmail
       </div>`
   });
 };
+
+/**
+ * Notify a user with a password reset or setup link.
+ */
+export const sendPasswordResetEmail = async ({ to, resetToken, isInvite = false }) => {
+  const resetLink = \`http://localhost:5173/reset-password?token=\${resetToken}\`;
+  const subject = isInvite ? 'AssetFlow: You have been invited' : 'AssetFlow: Password Reset Request';
+  const headerText = isInvite ? 'Welcome to AssetFlow' : 'Password Reset Request';
+  const bodyText = isInvite 
+    ? 'You have been invited to join AssetFlow. Click the button below to set up your password and access your account.'
+    : 'We received a request to reset your password. Click the button below to choose a new password.';
+
+  await sendMail({
+    to,
+    subject,
+    text: \`\${bodyText}\n\nReset Link: \${resetLink}\n\n— AssetFlow\`,
+    html: \`
+      <div style="font-family:sans-serif;max-width:600px;margin:auto;border:1px solid #e0e0e0;border-radius:12px;overflow:hidden">
+        <div style="background:#004AC6;padding:24px 32px">
+          <h2 style="color:#fff;margin:0;font-size:20px">🛡️ \${headerText}</h2>
+        </div>
+        <div style="padding:32px">
+          <p>\${bodyText}</p>
+          <div style="margin: 32px 0;">
+            <a href="\${resetLink}" style="background:#004AC6;color:#fff;text-decoration:none;padding:12px 24px;border-radius:6px;font-weight:bold;display:inline-block;">
+              \${isInvite ? 'Set Up Password' : 'Reset Password'}
+            </a>
+          </div>
+          <p style="color:#666;font-size:13px">If you did not request this, you can safely ignore this email.</p>
+          <p style="color:#aaa;font-size:12px;margin-top:32px">— AssetFlow Security System</p>
+        </div>
+      </div>\`
+  });
+};
+

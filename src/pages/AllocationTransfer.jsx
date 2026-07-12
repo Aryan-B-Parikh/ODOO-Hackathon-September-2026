@@ -1,5 +1,6 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
+import { useSearchParams } from 'react-router-dom';
 
 export default function AllocationTransfer() {
   const {
@@ -39,6 +40,15 @@ export default function AllocationTransfer() {
   });
 
   const [filterStatus, setFilterStatus] = useState('All');
+
+  // Deep-link: auto-open checkout modal if ?action=checkout is in URL
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('action') === 'checkout') {
+      setShowNewModal(true);
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
   const [filterType, setFilterType] = useState('All');
 
   // Conflict warning calculation (real-time overlap detection)

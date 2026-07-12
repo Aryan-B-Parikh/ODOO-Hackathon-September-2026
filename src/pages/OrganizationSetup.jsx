@@ -1,5 +1,6 @@
-import React, { useState, useContext } from 'react';
+import React, { useState, useContext, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
+import { useSearchParams } from 'react-router-dom';
 
 export default function OrganizationSetup() {
   const {
@@ -21,6 +22,16 @@ export default function OrganizationSetup() {
   const [showModal, setShowModal] = useState(false);
   const [editingItem, setEditingItem] = useState(null); // to edit existing records
   const [search, setSearch] = useState('');
+
+  // Deep-link: auto-switch to employees tab if ?tab=employees is in URL
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'employees' || tab === 'departments' || tab === 'categories') {
+      setActiveTab(tab);
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
 
   // Table pagination and sorting states
   const [deptPage, setDeptPage] = useState(1);

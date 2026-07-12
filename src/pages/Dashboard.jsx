@@ -237,7 +237,7 @@ export default function Dashboard() {
             <span className="material-symbols-outlined text-[28px] text-primary group-hover:scale-110 transition-transform">add_circle</span>
             <span className="text-xs font-bold text-on-surface">Register Asset</span>
           </a>
-          <a href="/allocation" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-secondary-container/20 border border-outline-variant/30 hover:border-secondary/30 transition-all text-center group">
+          <a href="/allocation?action=checkout" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-secondary-container/20 border border-outline-variant/30 hover:border-secondary/30 transition-all text-center group">
             <span className="material-symbols-outlined text-[28px] text-secondary group-hover:scale-110 transition-transform">assignment_turned_in</span>
             <span className="text-xs font-bold text-on-surface">Checkout Asset</span>
           </a>
@@ -249,7 +249,7 @@ export default function Dashboard() {
             <span className="material-symbols-outlined text-[28px] text-error group-hover:scale-110 transition-transform">build_circle</span>
             <span className="text-xs font-bold text-on-surface">Log Repair</span>
           </a>
-          <a href="/organization" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-primary-container/20 border border-outline-variant/30 hover:border-primary/30 transition-all text-center group col-span-2 sm:col-span-1">
+          <a href="/organization?tab=employees" className="flex flex-col items-center gap-2 p-4 rounded-xl bg-surface-container-low hover:bg-primary-container/20 border border-outline-variant/30 hover:border-primary/30 transition-all text-center group col-span-2 sm:col-span-1">
             <span className="material-symbols-outlined text-[28px] text-on-surface-variant group-hover:scale-110 transition-transform">person_add</span>
             <span className="text-xs font-bold text-on-surface">Invite Employee</span>
           </a>

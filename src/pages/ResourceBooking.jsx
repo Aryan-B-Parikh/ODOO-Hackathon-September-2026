@@ -104,8 +104,8 @@ export default function ResourceBooking() {
       resourceId: form.resourceId,
       employeeId: user?.email || 'unassigned@assetflow.com',
       employeeName: user?.name || 'Unassigned Staff',
-      startDate: `${form.date}T${form.startTime}:00`,
-      endDate: `${form.date}T${form.endTime}:00`,
+      startDate: `${form.date}T${form.startTime}:00Z`,
+      endDate: `${form.date}T${form.endTime}:00Z`,
       recurrence: form.recurrence,
       reminderMinutes: parseInt(form.reminderMinutes),
       status: 'Upcoming'

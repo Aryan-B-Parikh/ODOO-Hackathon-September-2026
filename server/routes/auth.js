@@ -3,7 +3,8 @@ import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import crypto from 'crypto';
 import prisma from '../db.js';
-import { authMiddleware } from '../middleware/auth.js';
+import { authMiddleware, checkRole } from '../middleware/auth.js';
+import { sendPasswordResetEmail } from '../mailer.js';
 
 const router = express.Router();
 const JWT_SECRET = process.env.JWT_SECRET || 'supersecretjwtkey';
@@ -265,6 +266,8 @@ router.post('/forgot-password', async (req, res) => {
       }
     });
 
+    await sendPasswordResetEmail({ to: email, resetToken, isInvite: false });
+
     console.log(`[MAIL SIMULATOR] Password reset token for ${email}: ${resetToken}`);
     res.json({ message: 'Instructions sent to email if account exists.', resetToken }); // return in JSON for testing / screen simulations
   } catch (error) {
@@ -471,6 +474,99 @@ router.post('/preferences', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to update preferences.' });
+  }
+});
+
+// POST invite user (Admin only)
+router.post('/invite', authMiddleware, checkRole(['Admin']), async (req, res) => {
+  const { name, email, role, phone } = req.body;
+  if (!name || !email || !role) {
+    return res.status(400).json({ error: 'Name, email, and role are required.' });
+  }
+
+  try {
+    const existingUser = await prisma.user.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' }, isDeleted: false }
+    });
+    if (existingUser) {
+      return res.status(400).json({ error: 'User account with this email already exists.' });
+    }
+
+    const org = await prisma.organization.findUnique({ where: { id: req.user.organizationId } });
+    if (!org) {
+      return res.status(500).json({ error: 'Organization not found.' });
+    }
+
+    const dbRole = await prisma.role.findFirst({
+      where: { name: { equals: role, mode: 'insensitive' } }
+    });
+    if (!dbRole) {
+      return res.status(400).json({ error: `Invalid role specified: ${role}` });
+    }
+
+    let employee = await prisma.employee.findFirst({
+      where: { email: { equals: email, mode: 'insensitive' }, isDeleted: false }
+    });
+
+    // Create a dummy un-guessable password hash so the account is secure until they reset it
+    const dummyPasswordHash = bcrypt.hashSync(crypto.randomBytes(20).toString('hex'), 10);
+
+    const result = await prisma.$transaction(async (tx) => {
+      if (!employee) {
+        employee = await tx.employee.create({
+          data: {
+            name,
+            email,
+            phone: phone || null,
+            organizationId: org.id,
+          }
+        });
+      }
+
+      const newUser = await tx.user.create({
+        data: {
+          email,
+          passwordHash: dummyPasswordHash,
+          organizationId: org.id,
+          employeeId: employee.id,
+        }
+      });
+
+      await tx.userRole.create({
+        data: {
+          userId: newUser.id,
+          roleId: dbRole.id
+        }
+      });
+
+      // Generate reset token
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const expiry = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 days to accept invite
+
+      await tx.passwordReset.create({
+        data: {
+          userId: newUser.id,
+          token: resetToken,
+          expiresAt: expiry
+        }
+      });
+
+      return { user: newUser, employee, resetToken };
+    });
+
+    await sendPasswordResetEmail({ to: email, resetToken: result.resetToken, isInvite: true });
+
+    res.status(201).json({
+      message: 'Invitation sent successfully.',
+      user: {
+        name: result.employee.name,
+        email: result.user.email,
+        role: role
+      }
+    });
+  } catch (error) {
+    console.error('Invite error:', error);
+    res.status(500).json({ error: 'An error occurred during invitation.' });
   }
 });
 
