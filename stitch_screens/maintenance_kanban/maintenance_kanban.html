@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Maintenance Kanban | AssetFlow</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+          darkMode: "class",
+          theme: {
+            extend: {
+              "colors": {
+                      "on-tertiary-container": "#ffede6",
+                      "background": "#faf8ff",
+                      "tertiary-fixed": "#ffdbcd",
+                      "on-tertiary-fixed": "#360f00",
+                      "tertiary": "#943700",
+                      "tertiary-fixed-dim": "#ffb596",
+                      "surface-container-highest": "#e1e2ed",
+                      "primary-fixed": "#dbe1ff",
+                      "on-surface": "#191b23",
+                      "primary-container": "#2563eb",
+                      "tertiary-container": "#bc4800",
+                      "secondary-fixed-dim": "#b7c8e1",
+                      "surface-variant": "#e1e2ed",
+                      "surface-container-high": "#e7e7f3",
+                      "primary-fixed-dim": "#b4c5ff",
+                      "surface-container": "#ededf9",
+                      "on-primary": "#ffffff",
+                      "on-background": "#191b23",
+                      "secondary": "#505f76",
+                      "on-error": "#ffffff",
+                      "error-container": "#ffdad6",
+                      "on-primary-fixed-variant": "#003ea8",
+                      "secondary-fixed": "#d3e4fe",
+                      "on-primary-container": "#eeefff",
+                      "inverse-primary": "#b4c5ff",
+                      "on-secondary-container": "#54647a",
+                      "primary": "#004ac6",
+                      "on-tertiary-fixed-variant": "#7d2d00",
+                      "on-surface-variant": "#434655",
+                      "on-error-container": "#93000a",
+                      "outline-variant": "#c3c6d7",
+                      "on-secondary": "#ffffff",
+                      "on-secondary-fixed-variant": "#38485d",
+                      "surface-container-lowest": "#ffffff",
+                      "inverse-surface": "#2e3039",
+                      "surface-container-low": "#f3f3fe",
+                      "outline": "#737686",
+                      "error": "#ba1a1a",
+                      "inverse-on-surface": "#f0f0fb",
+                      "secondary-container": "#d0e1fb",
+                      "surface-dim": "#d9d9e5",
+                      "on-secondary-fixed": "#0b1c30",
+                      "surface": "#faf8ff",
+                      "on-tertiary": "#ffffff",
+                      "surface-tint": "#0053db",
+                      "on-primary-fixed": "#00174b",
+                      "surface-bright": "#faf8ff"
+              },
+              "borderRadius": {
+                      "DEFAULT": "0.25rem",
+                      "lg": "0.5rem",
+                      "xl": "0.75rem",
+                      "full": "9999px"
+              },
+              "spacing": {
+                      "gutter": "24px",
+                      "stack-gap": "16px",
+                      "sidebar-width": "280px",
+                      "container-max": "1440px",
+                      "sidebar-collapsed": "80px",
+                      "margin-desktop": "32px",
+                      "margin-mobile": "16px"
+              },
+              "fontFamily": {
+                      "headline-md": ["Inter"],
+                      "body-md": ["Inter"],
+                      "display": ["Inter"],
+                      "headline-lg-mobile": ["Inter"],
+                      "sidebar-item": ["Inter"],
+                      "body-lg": ["Inter"],
+                      "label-caps": ["Inter"],
+                      "headline-lg": ["Inter"]
+              },
+              "fontSize": {
+                      "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                      "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                      "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                      "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                      "sidebar-item": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                      "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                      "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                      "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+              }
+            },
+          },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+        .material-symbols-outlined { font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24; }
+        .kanban-column { min-width: 300px; max-width: 340px; }
+        .glass-card { backdrop-filter: blur(12px); }
+        ::-webkit-scrollbar { width: 6px; height: 6px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #e1e2ed; border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: #c3c6d7; }
+    </style>
+</head>
+<body class="bg-background text-on-surface">
+<!-- Side Navigation Shell -->
+<aside class="fixed left-0 top-0 h-full w-sidebar-width bg-surface border-r border-outline-variant shadow-sm flex flex-col py-6 z-50">
+<div class="px-6 mb-8 flex items-center gap-3">
+<div class="w-10 h-10 bg-primary-container rounded-xl flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">package_2</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">AssetFlow</h1>
+<p class="text-[10px] uppercase tracking-widest text-on-surface-variant font-bold">Enterprise RMS</p>
+</div>
+</div>
+<nav class="flex-1 px-4 space-y-1">
+<!-- Dashboard -->
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 px-4 py-2 rounded-lg font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<!-- Assets -->
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 px-4 py-2 rounded-lg font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+                Assets
+            </a>
+<!-- Maintenance (Active) -->
+<a class="flex items-center gap-3 bg-primary-container/10 text-primary border-l-4 border-primary px-4 py-2 rounded-r-lg font-sidebar-item text-sidebar-item transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">build</span>
+                Maintenance
+            </a>
+<!-- Resources -->
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 px-4 py-2 rounded-lg font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">group</span>
+                Resources
+            </a>
+<!-- Audit -->
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 px-4 py-2 rounded-lg font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">history</span>
+                Audit
+            </a>
+<!-- Settings -->
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface hover:bg-surface-container-high transition-colors duration-200 px-4 py-2 rounded-lg font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="mt-auto px-4 space-y-1 pt-6 border-t border-outline-variant">
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface px-4 py-2 rounded-lg font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">help_outline</span>
+                Support
+            </a>
+<a class="flex items-center gap-3 text-on-surface-variant hover:text-on-surface px-4 py-2 rounded-lg font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">person</span>
+                Account
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="ml-sidebar-width min-h-screen flex flex-col">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 w-full z-40 bg-surface/80 backdrop-blur-md border-b border-outline-variant flex justify-between items-center h-16 px-gutter">
+<div class="flex items-center gap-8 flex-1">
+<div class="relative w-full max-w-md group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="w-full bg-surface-container-low border-none rounded-full pl-10 pr-4 py-2 text-body-md focus:ring-2 focus:ring-primary/20 transition-all outline-none" placeholder="Search tasks, assets, or technicians..." type="text"/>
+</div>
+<nav class="hidden md:flex gap-6">
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-all" href="#">Overview</a>
+<a class="font-body-md text-body-md text-primary font-bold border-b-2 border-primary pb-1" href="#">Board</a>
+<a class="font-body-md text-body-md text-on-surface-variant hover:text-on-surface transition-all" href="#">Reports</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-all text-on-surface-variant relative">
+<span class="material-symbols-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-error rounded-full"></span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-surface-container-low transition-all text-on-surface-variant">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="w-10 h-10 rounded-full overflow-hidden border-2 border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="A professional headshot of a female fleet maintenance manager in a high-tech corporate office. She has a confident expression and is wearing a sleek business-casual blazer. The lighting is soft and professional, highlighting a clean, light-mode office background with subtle blue accents, following the Enterprise Premium aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDt7tL9ibZBz8c0A5CvVnksjhaHMzqPezM-2YeZud_qzNvuDVgTjsXUwqIEpQubRmPDIU39Era0vinxxkKnRRKiicjCYE6rCayZf4ZseJnu1u4mVsRcA4z3Z1ppeTwlMjUop1LMLJXKDa_YjLJEdZPEymiKj67CUkUECAhnZU9mxV2OBWddyiCNbX7aiApVAZ8d3jw2Q0RCsT7hG5_7X5J59rWoZ8z7skHh7fPaUtGH9rhIXeJct0d2NvQ5D10LxJ8E02JpyEM4nxXB"/>
+</div>
+</div>
+</header>
+<!-- Board Toolbar -->
+<section class="px-gutter pt-8 pb-4 flex flex-wrap justify-between items-end gap-4">
+<div>
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Maintenance Board</h2>
+<div class="flex items-center gap-4 mt-2">
+<div class="flex -space-x-2">
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-slate-200 overflow-hidden" title="Alex Rivera">
+<img class="w-full h-full object-cover" data-alt="Close up portrait of a male aircraft technician wearing navy blue overalls, smiling slightly. Cinematic lighting in a modern industrial hangar setting with soft bokeh. Enterprise blue color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD3EJztPAmwgCdk6DfbHF8CmG-JdrvP2vxAsI2WhERYmNhq1OCA72tC4ILCh1_i_nSp9wU8AzpsDCw7sGHvpJAnlt6Onzv5G7bEsSuXrlp6xBpronQ6VfSip5jNQyWergFEB0Wm20dsumsBBYCpnYP3VNpjYmWnQwNan5TPJGA2VHpoSkPbXSlCdlvF-ldr2x9PiT5zzmC0jQarO192DntYgzg9NQQ70WWDl04DM54Xtt2mogcc9OAtVJpooWV21EHeKR8fGiXjQTut"/>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-slate-200 overflow-hidden" title="Jordan Smith">
+<img class="w-full h-full object-cover" data-alt="Close up portrait of a female industrial engineer with protective eyewear resting on her head, professional and determined look. Bright, high-key studio lighting with a clean white and light grey background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCvcxSu8csAbk__qE1BoDdSs2YFHC6AHgmung7MxlwOHQWilTBFc6aDlZd-JgGVMDXJV9fTBQzh90C7P3W3jYGt33BzVlirlwABSCQRYHK9z07Wce2586uTfDuVpw4qhEC1oAZB9gT8uSOys3Xwiu6egSv75jnLkTHyOTUbKwiGLUaQjQbgaLkmXkT9ACgkh1HL-rUByXDeCLJqYxmrwYuwRsmFRk2_knFT2iYWraKnfu6mWh0vEVyA-AcCj2tUvc3OoIhFNKofOKUn"/>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-slate-200 overflow-hidden" title="Sam Chen">
+<img class="w-full h-full object-cover" data-alt="Portrait of a senior male maintenance supervisor with grey hair, wearing a clean professional uniform. Warm ambient lighting, high-end corporate workshop environment in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDW6n3gOoyXFrvdQDZw8W5AzDjAFStj-81SuhQzkmz57fjAg7qbeBwP8ZXIoZHhcu-n0o7wic_nkpGhteZKWJ2qNDOVtSpPPnjRTvsunOYgC-p36L5nv_iuDeBylzTfAO4ls-dwrKaAqjHu1AHnF0vxBG6aQuoUPF4VXIinEkyFg92mW589ufG6X6kC-WJ9vBvfM_EI2zRtsZNMMXfB_2aKX6b2nIfDe2mjmPvyO3WVyBqDGSA9qdEM1h2Ctunxnt78Iev031hnWeKG"/>
+</div>
+<div class="w-8 h-8 rounded-full border-2 border-surface bg-primary-container text-on-primary flex items-center justify-center text-[10px] font-bold">
+                            +12
+                        </div>
+</div>
+<span class="h-4 w-px bg-outline-variant"></span>
+<div class="flex gap-2">
+<button class="flex items-center gap-1 px-3 py-1.5 bg-surface-container-high rounded-lg text-body-md text-on-surface-variant hover:bg-outline-variant transition-all">
+<span class="material-symbols-outlined text-[18px]">filter_list</span>
+                            Priority
+                        </button>
+<button class="flex items-center gap-1 px-3 py-1.5 bg-surface-container-high rounded-lg text-body-md text-on-surface-variant hover:bg-outline-variant transition-all">
+<span class="material-symbols-outlined text-[18px]">category</span>
+                            Asset Type
+                        </button>
+</div>
+</div>
+</div>
+<button class="flex items-center gap-2 bg-primary text-on-primary px-6 py-3 rounded-xl font-body-lg text-body-lg shadow-lg hover:shadow-primary/20 hover:scale-[1.02] active:scale-[0.98] transition-all">
+<span class="material-symbols-outlined">add</span>
+                New Ticket
+            </button>
+</section>
+<!-- Kanban Board Surface -->
+<section class="flex-1 px-gutter py-6 overflow-x-auto">
+<div class="flex gap-6 h-full min-h-[600px] items-start">
+<!-- Backlog Column -->
+<div class="kanban-column flex flex-col h-full">
+<div class="flex items-center justify-between px-2 mb-4">
+<div class="flex items-center gap-2">
+<h3 class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">Backlog</h3>
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-full text-[10px] font-bold text-on-surface-variant">4</span>
+</div>
+<button class="p-1 hover:bg-surface-container-high rounded transition-all text-on-surface-variant">
+<span class="material-symbols-outlined">more_horiz</span>
+</button>
+</div>
+<div class="space-y-4 overflow-y-auto pr-2 pb-8">
+<!-- Card 1 (High) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-grab active:cursor-grabbing group">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 bg-error-container text-on-error-container text-[10px] font-bold rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">priority_high</span>
+                                    High
+                                </span>
+<span class="font-label-caps text-[10px] text-outline">#AX-2091</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface mb-3 group-hover:text-primary transition-colors">HVAC Unit 4 Filter Replacement</h4>
+<div class="w-full bg-surface-container rounded-full h-1.5 mb-3">
+<div class="bg-outline-variant h-1.5 rounded-full" style="width: 0%"></div>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full overflow-hidden bg-surface-container-highest">
+<img class="w-full h-full object-cover" data-alt="Portrait of a young technician in professional work attire. Clean, well-lit workshop background with enterprise blue highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCAb3JSNRiEJXx4US2QdyP_t6zJ1IHL-M2I52CZ-a6sQX_XxRl-OlAQJznE_VNZ-Zf6nUCJUJ2R4yx3g1naGO0UAAJF6HTFekb2H6qPzYhcc9blXxsUI1zuaCRJ0jpzz8NzCRJ1LZAsGSX2ex6x3qcBpfID0i-wLkA8XbyNBTDDJJXlzhD16Wthm_m0UNcpIEEiyhiCr-9zXRjKLItZkpIqnYwpmzlNxTIHOzq0hzxekvOdFlDYDqCuac_XZU4z2uDYUjQDxCJh2Ayq"/>
+</div>
+<span class="text-[11px] text-on-surface-variant font-medium">Unassigned</span>
+</div>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline">chat_bubble</span>
+<span class="material-symbols-outlined text-[16px] text-outline">attachment</span>
+</div>
+</div>
+</div>
+<!-- Card 2 (Medium) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-grab active:cursor-grabbing group">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-bold rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">low_priority</span>
+                                    Medium
+                                </span>
+<span class="font-label-caps text-[10px] text-outline">#AX-2104</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface mb-3 group-hover:text-primary transition-colors">Conveyor Belt Lubrication Zone B</h4>
+<div class="w-full bg-surface-container rounded-full h-1.5 mb-3">
+<div class="bg-outline-variant h-1.5 rounded-full" style="width: 10%"></div>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full overflow-hidden bg-surface-container-highest">
+<img class="w-full h-full object-cover" data-alt="Portrait of a female technical operator in high-visibility gear, looking focused. Industrial factory setting with bright daylight and professional color grading." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAi80SMv4zE6gQ8zNqp2xd5Rar0D0YxkSK6TLdFXhmsexH8trFgbhXapi0ssxo0RPMS_jP5p19hQOxHEskPFZzlxdrpsMd8lzTZ_1mMX9Zn-fA-u1kEnLlLHpONKVJV4mQxsI1Rs6qHCEx3rK-z2LVH3KUWW-8y7vRRXH5yVsqyPopVOqwaKuEJsunLBEVtHGyUzAwthM0R94BS54S2NL2V2nBgoIW9_Ak8SrF8qoJTyRsaWJJDXKIENXT4ZGtstF_hGJlP7v7VNvUE"/>
+</div>
+<span class="text-[11px] text-on-surface-variant font-medium">Jordan S.</span>
+</div>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline">attachment</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- In Progress Column -->
+<div class="kanban-column flex flex-col h-full bg-surface-container/30 rounded-2xl p-3">
+<div class="flex items-center justify-between px-2 mb-4">
+<div class="flex items-center gap-2">
+<h3 class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">In Progress</h3>
+<span class="px-2 py-0.5 bg-primary-container text-on-primary text-[10px] font-bold rounded-full">2</span>
+</div>
+</div>
+<div class="space-y-4 overflow-y-auto pr-2 pb-8">
+<!-- Card 3 (High - Progressing) -->
+<div class="bg-surface-container-lowest border border-primary/20 border-l-4 border-l-primary rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-grab active:cursor-grabbing group">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 bg-error-container text-on-error-container text-[10px] font-bold rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">priority_high</span>
+                                    High
+                                </span>
+<span class="font-label-caps text-[10px] text-outline font-bold text-primary">#AX-1988</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface mb-3 group-hover:text-primary transition-colors">Server Rack 12 Power Supply Issue</h4>
+<div class="flex items-center justify-between mb-1">
+<span class="text-[10px] font-bold text-primary">65% Complete</span>
+<span class="text-[10px] text-outline">Due Today</span>
+</div>
+<div class="w-full bg-surface-container rounded-full h-2 mb-3 overflow-hidden">
+<div class="bg-primary h-2 rounded-full transition-all duration-1000" style="width: 65%"></div>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full overflow-hidden bg-surface-container-highest ring-2 ring-primary/20">
+<img class="w-full h-full object-cover" data-alt="Professional tech worker portrait in a server room environment. Glowing blue lights and tech-focused background. Calm and competent expression." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBweA6PiS5AXIJ8Et1UyCMN41SnB6bl3OPVNvJt6o0MY16aSSl-4BWoeSnEhQgMJ3f8GINfHKReDt4Gq8LLxhRhdR2_0kGnXML--ecDDPtn36TpIapvSz822d5XGjCj80m2yoFOrabw2lC98QaXRx5dL5icpzW4ezWVoNdJmtiMCJa3bvQS13QSdhHnl7ztDrqvCh3LFNLX6bsJuXVSMZSQyhXU23LBJMuqsdmg9NqTLzxzsa6MKzYANPi0zG-SP_D-lfqkJcrpuu3e"/>
+</div>
+<span class="text-[11px] text-primary font-bold">Alex Rivera</span>
+</div>
+<div class="flex gap-2">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px] text-primary">chat_bubble</span>
+<span class="text-[10px] font-bold text-primary">3</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Card 4 (Medium - Progressing) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-grab active:cursor-grabbing group">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 bg-tertiary-fixed text-on-tertiary-fixed text-[10px] font-bold rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">low_priority</span>
+                                    Medium
+                                </span>
+<span class="font-label-caps text-[10px] text-outline">#AX-2044</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface mb-3 group-hover:text-primary transition-colors">Hydraulic Leak Detection - Forklift F2</h4>
+<div class="w-full bg-surface-container rounded-full h-1.5 mb-3">
+<div class="bg-primary-container h-1.5 rounded-full" style="width: 25%"></div>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full overflow-hidden bg-surface-container-highest">
+<img class="w-full h-full object-cover" data-alt="Portrait of an experienced industrial mechanic. Soft professional lighting, clean industrial aesthetics, enterprise blue highlights." src="https://lh3.googleusercontent.com/aida-public/AB6AXuD48KO0D4VAPfLXArC6JB7hwCA2eW1i6iaFcyAFcWX72joMxvJaV6sHaClw2O4RlKlqZn0FLT-9Q2YnmqdFg8rOOwmyVvLcBK-0BJkYO5XiUsdfjaWX2_I18rCLD0T-X05aW1h9fgA2zUo7t-k1pFQXz4mNQwWvErtPIxJywAXofueOfgqlryWzd_2CrKmScobDbLTa6KIal2vAIoQJeGu-8xFLrhL_CgQircS3Sz_xCIXM9_IT4bkSf3IU_oSO1PbQDH5UWNr0QjZp"/>
+</div>
+<span class="text-[11px] text-on-surface-variant font-medium">Sam Chen</span>
+</div>
+<div class="flex gap-2">
+<span class="material-symbols-outlined text-[16px] text-outline">visibility</span>
+</div>
+</div>
+</div>
+</div>
+</div>
+<!-- Review Column -->
+<div class="kanban-column flex flex-col h-full">
+<div class="flex items-center justify-between px-2 mb-4">
+<div class="flex items-center gap-2">
+<h3 class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">Review</h3>
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-full text-[10px] font-bold text-on-surface-variant">1</span>
+</div>
+</div>
+<div class="space-y-4 overflow-y-auto pr-2 pb-8">
+<!-- Card 5 (Low) -->
+<div class="bg-surface-container-lowest border border-outline-variant rounded-xl p-4 shadow-sm hover:shadow-md hover:-translate-y-1 transition-all cursor-grab active:cursor-grabbing group">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 bg-surface-container text-on-surface-variant text-[10px] font-bold rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">arrow_downward</span>
+                                    Low
+                                </span>
+<span class="font-label-caps text-[10px] text-outline">#AX-2110</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface mb-3 group-hover:text-primary transition-colors">Emergency Light Testing - Wing C</h4>
+<div class="w-full bg-surface-container rounded-full h-1.5 mb-3">
+<div class="bg-secondary-container h-1.5 rounded-full" style="width: 100%"></div>
+</div>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full overflow-hidden bg-surface-container-highest">
+<img class="w-full h-full object-cover" data-alt="Portrait of a professional safety officer in a corporate uniform. Minimalist light-mode office background, enterprise blue and clean white color palette." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCcHri9CVf91h3BK_jWa5P7tg0tfZ2fow-YUWa1wuCAsJ0xZOgsfogfTISk6rKWfGiVI4sRIfh4mZlhsSjKetjdHW50ZcqAHX_8rYn9oVrcbRJPMfpFJFnRJEW6QQaMYt7Jbz_dWpAUyLmAw3XGsiZK86SUZA5su71siWAQuKEa6BYLps0PQfgmnnlMRajOD-d0rNCPKi-EhXvm-NRflzrKJ2e_JvgPsyxswSLRTzN_gLNCJLhTe_1eMQ21ZkJNFXSf0Exljd7YkC2K"/>
+</div>
+<span class="text-[11px] text-on-surface-variant font-medium">Maria G.</span>
+</div>
+<button class="px-2 py-1 bg-primary/10 text-primary text-[10px] font-bold rounded hover:bg-primary/20 transition-all">Approve</button>
+</div>
+</div>
+</div>
+</div>
+<!-- Completed Column -->
+<div class="kanban-column flex flex-col h-full">
+<div class="flex items-center justify-between px-2 mb-4">
+<div class="flex items-center gap-2">
+<h3 class="font-label-caps text-label-caps uppercase tracking-wider text-on-surface-variant">Completed</h3>
+<span class="px-2 py-0.5 bg-surface-container-highest rounded-full text-[10px] font-bold text-on-surface-variant">8</span>
+</div>
+</div>
+<div class="space-y-4 overflow-y-auto pr-2 pb-8 opacity-70 hover:opacity-100 transition-opacity">
+<!-- Card 6 (Completed) -->
+<div class="bg-surface-container border border-outline-variant/30 rounded-xl p-4 grayscale-[0.5] group transition-all">
+<div class="flex justify-between items-start mb-2">
+<span class="px-2 py-0.5 bg-secondary-container/50 text-on-secondary-container text-[10px] font-bold rounded-md flex items-center gap-1">
+<span class="material-symbols-outlined text-[14px]">check_circle</span>
+                                    Done
+                                </span>
+<span class="font-label-caps text-[10px] text-outline line-through">#AX-1822</span>
+</div>
+<h4 class="font-body-md text-body-md text-on-surface mb-3 line-through opacity-60">Generator Weekly Test - Standby Power</h4>
+<div class="flex justify-between items-center">
+<div class="flex items-center gap-2">
+<div class="w-6 h-6 rounded-full overflow-hidden bg-surface-container-highest opacity-50">
+<img class="w-full h-full object-cover" data-alt="Portrait of a facility manager in a clean, modern workshop. Soft, high-key lighting, bright and airy feel, minimal background detail." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAsRBkQCGaGSTbbFSn_XaIt26fMidzPF-vEwqv7E_GuYPZEcpZ93VTOwDv6GQociVph6KfXBy81N0RO8p4ivvNJKwBa-1ctjUuwFYPZnhpZ96so6QlxBDTgO1U1KGILqjTW8yl87MsCoSrZLO-2PkAO6vSZYKFvg1-MjFx6UkDqY17MPl7coEn8ICAw3VkxOnYr0pPz7N6LSq7xxpgbr-KVDU48Bd7LgvOs_O_p40nHT7-uw4n9UaD_2zkbDtc990GZ9z596FADewsK"/>
+</div>
+<span class="text-[11px] text-on-surface-variant font-medium">Sam Chen</span>
+</div>
+<span class="text-[10px] font-bold text-secondary">Finalized</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Add Column Placeholder -->
+<button class="flex flex-col items-center justify-center min-w-[100px] h-[300px] border-2 border-dashed border-outline-variant rounded-2xl text-outline hover:text-primary hover:border-primary hover:bg-primary/5 transition-all group">
+<span class="material-symbols-outlined text-[32px] group-hover:scale-110 transition-transform">add_circle</span>
+<span class="font-label-caps text-[10px] mt-2 font-bold uppercase tracking-widest">Add Column</span>
+</button>
+</div>
+</section>
+</main>
+<!-- Micro-interaction Scripts -->
+<script>
+        // Simple drag feedback simulation
+        const cards = document.querySelectorAll('.kanban-column > div > div');
+        cards.forEach(card => {
+            card.addEventListener('mousedown', () => {
+                card.style.transform = 'scale(1.02) rotate(1deg)';
+                card.style.zIndex = '100';
+            });
+            card.addEventListener('mouseup', () => {
+                card.style.transform = '';
+                card.style.zIndex = '';
+            });
+        });
+
+        // Search bar focus effect
+        const searchInput = document.querySelector('input[type="text"]');
+        searchInput.addEventListener('focus', () => {
+            searchInput.parentElement.classList.add('max-w-xl');
+        });
+        searchInput.addEventListener('blur', () => {
+            searchInput.parentElement.classList.remove('max-w-xl');
+        });
+    </script>
+</body></html>

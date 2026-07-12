@@ -1,0 +1,151 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ── Transition for color mode changes ── */
+html, body {
+  transition: background-color 200ms ease, color 200ms ease;
+}
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* ── Light mode CSS custom props (Tailwind tokens) ── */
+  :root {
+    --color-surface: #faf8ff;
+    --color-on-surface: #191b23;
+    --color-primary: #004ac6;
+  }
+
+  /* ── Dark mode CSS overrides ── */
+  html.dark {
+    background: #0F172A;
+    color: #F8FAFC;
+
+    --color-surface: #0F172A;
+    --color-on-surface: #F8FAFC;
+    --color-primary: #3B82F6;
+
+    /* Material Design surface scale in dark */
+    color-scheme: dark;
+  }
+
+  /* Dark mode Tailwind semantic color overrides */
+  html.dark .text-on-surface { color: #F8FAFC; }
+  html.dark .text-on-surface-variant { color: #CBD5E1; }
+  html.dark .border-outline-variant { border-color: #334155; }
+  html.dark .bg-surface { background: #0F172A; }
+  html.dark .bg-surface-container-low { background: #1a2332; }
+  html.dark .bg-surface-container { background: #1E293B; }
+  html.dark .bg-surface-container-high { background: #1E293B; }
+  html.dark .bg-surface-container-highest { background: #334155; }
+  html.dark .bg-surface-container-lowest { background: #0F172A; }
+  html.dark .bg-background { background: #0F172A; }
+}
+
+/* ── Glassmorphism styles ── */
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(225, 226, 237, 0.5);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.85);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(225, 226, 237, 0.8);
+}
+
+/* Dark mode glass overrides */
+html.dark .glass-card {
+  background: rgba(30, 41, 59, 0.85);
+  border-color: rgba(51, 65, 85, 0.6);
+}
+html.dark .glass-panel {
+  background: rgba(15, 23, 42, 0.8);
+  border-color: rgba(51, 65, 85, 0.4);
+  backdrop-filter: blur(12px);
+}
+
+/* ── Scrollbar styling ── */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 5px;
+  height: 5px;
+}
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+html.dark .custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #a0aec0; }
+
+/* ── Active sidebar nav indicator ── */
+.active-nav-indicator {
+  box-shadow: inset 4px 0 0 0 #004ac6;
+}
+html.dark .active-nav-indicator {
+  box-shadow: inset 4px 0 0 0 #3B82F6;
+}
+
+/* ── Animations ── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes scaleUp {
+  from { opacity: 0; transform: scale(0.95) translateY(8px); }
+  to { opacity: 1; transform: scale(1) translateY(0); }
+}
+
+@keyframes slideInLeft {
+  from { opacity: 0; transform: translateX(-12px); }
+  to { opacity: 1; transform: translateX(0); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200px 0; }
+  100% { background-position: calc(200px + 100%) 0; }
+}
+
+.animate-fadeIn { animation: fadeIn 0.2s ease-out forwards; }
+.animate-scaleUp { animation: scaleUp 0.2s ease-out forwards; }
+.animate-slideInLeft { animation: slideInLeft 0.25s ease-out forwards; }
+
+/* ── Skeleton Loading ── */
+.skeleton {
+  background: linear-gradient(90deg, #f0f0f0 25%, #e0e0e0 50%, #f0f0f0 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.5s infinite;
+  border-radius: 8px;
+}
+html.dark .skeleton {
+  background: linear-gradient(90deg, #1e293b 25%, #334155 50%, #1e293b 75%);
+  background-size: 400px 100%;
+  animation: shimmer 1.5s infinite;
+}
+
+/* ── Focus ring for accessibility ── */
+:focus-visible {
+  outline: 2px solid #004ac6;
+  outline-offset: 2px;
+}
+html.dark :focus-visible {
+  outline-color: #3B82F6;
+}
+
+/* ── Kanban drop zone highlight ── */
+[data-drop-zone="active"] {
+  background: rgba(0, 74, 198, 0.05);
+  border: 2px dashed rgba(0, 74, 198, 0.4);
+}
+html.dark [data-drop-zone="active"] {
+  background: rgba(59, 130, 246, 0.1);
+  border-color: rgba(59, 130, 246, 0.5);
+}

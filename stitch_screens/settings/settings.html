@@ -1,0 +1,561 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Settings - AssetFlow</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-container": "#ffede6",
+                    "inverse-surface": "#2e3039",
+                    "primary-container": "#2563eb",
+                    "on-tertiary-fixed": "#360f00",
+                    "on-primary": "#ffffff",
+                    "inverse-primary": "#b4c5ff",
+                    "background": "#faf8ff",
+                    "secondary-container": "#d0e1fb",
+                    "on-secondary-container": "#54647a",
+                    "surface-bright": "#faf8ff",
+                    "surface-tint": "#0053db",
+                    "surface-container-high": "#e7e7f3",
+                    "secondary": "#505f76",
+                    "tertiary-fixed-dim": "#ffb596",
+                    "on-tertiary-fixed-variant": "#7d2d00",
+                    "on-error": "#ffffff",
+                    "inverse-on-surface": "#f0f0fb",
+                    "secondary-fixed": "#d3e4fe",
+                    "on-primary-fixed": "#00174b",
+                    "on-background": "#191b23",
+                    "surface-container-low": "#f3f3fe",
+                    "on-tertiary": "#ffffff",
+                    "on-primary-fixed-variant": "#003ea8",
+                    "primary": "#004ac6",
+                    "on-surface-variant": "#434655",
+                    "on-primary-container": "#eeefff",
+                    "primary-fixed-dim": "#b4c5ff",
+                    "on-error-container": "#93000a",
+                    "error": "#ba1a1a",
+                    "surface-dim": "#d9d9e5",
+                    "primary-fixed": "#dbe1ff",
+                    "on-surface": "#191b23",
+                    "tertiary-container": "#bc4800",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "on-secondary-fixed": "#0b1c30",
+                    "surface-container": "#ededf9",
+                    "surface-variant": "#e1e2ed",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "tertiary": "#943700",
+                    "outline-variant": "#c3c6d7",
+                    "error-container": "#ffdad6",
+                    "surface-container-highest": "#e1e2ed",
+                    "surface": "#faf8ff",
+                    "outline": "#737686",
+                    "on-secondary": "#ffffff",
+                    "tertiary-fixed": "#ffdbcd",
+                    "surface-container-lowest": "#ffffff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "sidebar-width": "280px",
+                    "gutter": "24px",
+                    "container-max": "1440px",
+                    "margin-desktop": "32px",
+                    "stack-gap": "16px",
+                    "sidebar-collapsed": "80px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "sidebar-item": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "body-md": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "display": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "headline-md": ["Inter"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "sidebar-item": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+            display: inline-block;
+            vertical-align: middle;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .sidebar-active-indicator {
+            position: absolute;
+            left: 0;
+            width: 4px;
+            height: 24px;
+            background-color: #004ac6;
+            border-radius: 0 4px 4px 0;
+        }
+        .hide-scrollbar::-webkit-scrollbar { display: none; }
+        .hide-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen flex">
+<!-- SideNavBar Anchor -->
+<aside class="w-sidebar-width h-screen fixed left-0 top-0 bg-surface-container-low border-r border-outline-variant/30 flex flex-col py-8 px-4 gap-stack-gap z-50">
+<div class="flex items-center gap-3 px-4 mb-6">
+<div class="w-10 h-10 rounded-xl bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">account_balance</span>
+</div>
+<div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">AssetFlow</h1>
+<p class="text-[10px] uppercase tracking-widest text-secondary font-bold">Enterprise Resource</p>
+</div>
+</div>
+<nav class="flex-1 space-y-1">
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Dashboard
+            </a>
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+                Assets
+            </a>
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">build</span>
+                Maintenance
+            </a>
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">group</span>
+                Resources
+            </a>
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+                Audit
+            </a>
+<a class="flex items-center gap-3 bg-primary-container text-on-primary-container rounded-xl border-l-4 border-primary px-4 py-3 transition-all font-sidebar-item text-sidebar-item shadow-sm" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+                Settings
+            </a>
+</nav>
+<div class="mt-auto space-y-1">
+<button class="w-full mb-4 bg-primary text-on-primary py-3 px-4 rounded-xl font-sidebar-item text-sidebar-item flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px]">add_circle</span>
+                Quick Audit
+            </button>
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+                Support
+            </a>
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all font-sidebar-item text-sidebar-item" href="#">
+<span class="material-symbols-outlined">logout</span>
+                Log Out
+            </a>
+</div>
+</aside>
+<!-- Main Content Area -->
+<main class="flex-1 ml-sidebar-width min-h-screen relative">
+<!-- TopNavBar Anchor -->
+<header class="w-full h-16 sticky top-0 backdrop-blur-xl bg-surface/80 flex items-center justify-between px-margin-desktop z-40 shadow-sm">
+<div class="flex items-center gap-8">
+<div class="hidden md:flex items-center gap-6">
+<a class="font-body-md text-body-md text-secondary hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="font-body-md text-body-md text-secondary hover:text-primary transition-colors" href="#">Assets</a>
+<a class="font-body-md text-body-md text-secondary hover:text-primary transition-colors" href="#">Maintenance</a>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="relative flex items-center">
+<span class="material-symbols-outlined absolute left-3 text-outline">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-full w-64 focus:ring-2 focus:ring-primary/20 transition-all text-body-md" placeholder="Search settings..." type="text"/>
+</div>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-secondary-container/50 transition-colors text-secondary active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="w-10 h-10 flex items-center justify-center rounded-full hover:bg-secondary-container/50 transition-colors text-secondary active:scale-95">
+<span class="material-symbols-outlined">help</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-outline-variant cursor-pointer active:scale-95 transition-transform">
+<img class="w-full h-full object-cover" data-alt="A professional business headshot of a corporate executive in a crisp white shirt, photographed with high-key studio lighting against a clean, minimal light blue background. The style is modern, professional, and high-fidelity, conveying competence and leadership within a sleek enterprise SaaS environment." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCBw7Ss4N8nbZiwxmxRBEZWy-JCEhZSWbn_gFYdzsTv2NNJkK8vzZ6HrGWEfWfuru6eHumBrybYBflN3BJ2qeyy5BKPyGc--2I0Vjcpd-JaMnRHQ81BcCvsitg6OsrOzLBeB3W3W_SZJ6WZna5VPwpQCf2ZwO8i1NPu9r1UrOBZZ9snHJasfXI3fXF8aq9bolx5fSCWOJ7S67YclWkcqt8hk5NEbhiHDLoGcSq6cG_XOygRVM70pZtRh0sX-F4HQK10WlI_dA00acx3"/>
+</div>
+</div>
+</header>
+<!-- Page Header -->
+<div class="px-margin-desktop pt-8 pb-4">
+<h2 class="font-headline-lg text-headline-lg text-on-background">System Settings</h2>
+<p class="font-body-md text-body-md text-secondary mt-1">Manage your enterprise configurations, user roles, and third-party connections.</p>
+</div>
+<!-- Content Shell with Horizontal Tabs -->
+<div class="px-margin-desktop pb-12">
+<div class="flex flex-col lg:flex-row gap-8 mt-6">
+<!-- Vertical Tab Navigation (Bento Style) -->
+<nav class="lg:w-64 flex flex-row lg:flex-col gap-2 overflow-x-auto hide-scrollbar shrink-0">
+<button class="tab-btn active-tab flex items-center gap-3 px-5 py-3 rounded-xl font-sidebar-item text-sidebar-item transition-all text-left bg-primary-container text-on-primary-container" id="tab-general" onclick="switchTab('general')">
+<span class="material-symbols-outlined text-[20px]">tune</span>
+                        General
+                    </button>
+<button class="tab-btn flex items-center gap-3 px-5 py-3 rounded-xl font-sidebar-item text-sidebar-item transition-all text-left text-secondary hover:bg-surface-container-high" id="tab-users" onclick="switchTab('users')">
+<span class="material-symbols-outlined text-[20px]">group</span>
+                        Users &amp; Permissions
+                    </button>
+<button class="tab-btn flex items-center gap-3 px-5 py-3 rounded-xl font-sidebar-item text-sidebar-item transition-all text-left text-secondary hover:bg-surface-container-high" id="tab-integrations" onclick="switchTab('integrations')">
+<span class="material-symbols-outlined text-[20px]">hub</span>
+                        Integrations
+                    </button>
+<button class="tab-btn flex items-center gap-3 px-5 py-3 rounded-xl font-sidebar-item text-sidebar-item transition-all text-left text-secondary hover:bg-surface-container-high" id="tab-notifications" onclick="switchTab('notifications')">
+<span class="material-symbols-outlined text-[20px]">notifications_active</span>
+                        Notifications
+                    </button>
+<button class="tab-btn flex items-center gap-3 px-5 py-3 rounded-xl font-sidebar-item text-sidebar-item transition-all text-left text-secondary hover:bg-surface-container-high" id="tab-billing" onclick="switchTab('billing')">
+<span class="material-symbols-outlined text-[20px]">payments</span>
+                        Billing
+                    </button>
+</nav>
+<!-- Settings Content Canvas -->
+<div class="flex-1 max-w-container-max">
+<!-- General Settings Panel -->
+<section class="tab-content space-y-6" id="content-general">
+<div class="glass-panel border border-outline-variant/30 rounded-2xl p-8 shadow-sm">
+<h3 class="font-headline-md text-headline-md mb-6">Company Branding</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-4">
+<label class="block font-label-caps text-label-caps text-secondary uppercase">Organization Name</label>
+<input class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none transition-all" type="text" value="AssetFlow Corp"/>
+<label class="block font-label-caps text-label-caps text-secondary uppercase mt-6">Primary Brand Color</label>
+<div class="flex items-center gap-4">
+<div class="w-12 h-12 rounded-lg bg-primary border border-outline-variant"></div>
+<input class="flex-1 px-4 py-3 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none transition-all uppercase" type="text" value="#004AC6"/>
+</div>
+</div>
+<div class="flex flex-col items-center justify-center border-2 border-dashed border-outline-variant rounded-2xl p-8 bg-surface-container-low hover:bg-surface-container-high transition-colors cursor-pointer group">
+<div class="w-16 h-16 rounded-full bg-surface-container-highest flex items-center justify-center text-primary group-hover:scale-110 transition-transform">
+<span class="material-symbols-outlined text-[32px]">upload_file</span>
+</div>
+<p class="font-body-md text-body-md mt-4 text-center">Click to upload brand logo<br/><span class="text-secondary text-sm">PNG, SVG up to 5MB</span></p>
+</div>
+</div>
+</div>
+<div class="glass-panel border border-outline-variant/30 rounded-2xl p-8 shadow-sm">
+<h3 class="font-headline-md text-headline-md mb-6">Regional Settings</h3>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+<div class="space-y-2">
+<label class="block font-label-caps text-label-caps text-secondary uppercase">System Timezone</label>
+<select class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none transition-all">
+<option>(GMT-08:00) Pacific Time (US &amp; Canada)</option>
+<option>(GMT-05:00) Eastern Time (US &amp; Canada)</option>
+<option>(GMT+00:00) London, UTC</option>
+<option>(GMT+01:00) Paris, Berlin</option>
+</select>
+</div>
+<div class="space-y-2">
+<label class="block font-label-caps text-label-caps text-secondary uppercase">Default Currency</label>
+<select class="w-full px-4 py-3 rounded-xl border border-outline-variant bg-surface-container-lowest focus:ring-2 focus:ring-primary/20 outline-none transition-all">
+<option>USD ($)</option>
+<option>EUR (€)</option>
+<option>GBP (£)</option>
+<option>JPY (¥)</option>
+</select>
+</div>
+</div>
+</div>
+<div class="flex justify-end gap-4 mt-8">
+<button class="px-8 py-3 rounded-xl font-sidebar-item text-sidebar-item text-secondary hover:bg-surface-container-high transition-all">Discard Changes</button>
+<button class="px-10 py-3 rounded-xl font-sidebar-item text-sidebar-item bg-primary text-on-primary shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all">Save General Settings</button>
+</div>
+</section>
+<!-- Users & Permissions Panel -->
+<section class="tab-content hidden space-y-6" id="content-users">
+<div class="flex items-center justify-between mb-2">
+<div>
+<h3 class="font-headline-md text-headline-md">User Management</h3>
+<p class="text-secondary font-body-md">Control who can access and manage your assets.</p>
+</div>
+<button class="bg-primary text-on-primary px-6 py-3 rounded-xl font-sidebar-item text-sidebar-item flex items-center gap-2 shadow-lg shadow-primary/20 hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[20px]">person_add</span>
+                                Invite User
+                            </button>
+</div>
+<div class="glass-panel border border-outline-variant/30 rounded-2xl overflow-hidden shadow-sm">
+<table class="w-full text-left">
+<thead class="bg-surface-container-low border-b border-outline-variant/30">
+<tr>
+<th class="px-6 py-4 font-label-caps text-label-caps text-secondary uppercase">User</th>
+<th class="px-6 py-4 font-label-caps text-label-caps text-secondary uppercase">Role</th>
+<th class="px-6 py-4 font-label-caps text-label-caps text-secondary uppercase">Status</th>
+<th class="px-6 py-4 font-label-caps text-label-caps text-secondary uppercase">Last Active</th>
+<th class="px-6 py-4 font-label-caps text-label-caps text-secondary uppercase text-right">Actions</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-outline-variant/20">
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="Close-up portrait of a female software engineer with a confident smile, wearing glasses and a minimalist grey blazer. The background is a blurred high-tech workspace with soft bokeh and white sunlight. High-fidelity photography style with a premium professional aesthetic." src="https://lh3.googleusercontent.com/aida-public/AB6AXuCrbY7YG_Up2fd2l-vN7X1bQimNiAdurhAO1n3bsUFc8zR4rh6eY4LLU-p879gQSnZHk8HePjXCmtkXUoMdbC7TrxmCU7pDnveGZBzx666HfFi7cn65XKIgDB3xgR53fpAxiGyPdb0Oi93nFJi_LeRIiOataCbd_jSV3bjZgsuxQn4OFGzLKR2J00rNF7SvrTAJP4OHUEZXgSHw2gl1AQkbGKXB9ZWEFvREz90K52bbQkr5Nu35Gf9Plv5eTQ1RuZM4lS020qbS1xz9"/>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-background">Sarah Jenkins</p>
+<p class="text-xs text-secondary">s.jenkins@assetflow.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-primary-container/10 text-primary text-[12px] font-bold rounded-full uppercase tracking-wider">Admin</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="text-body-md">Active</span>
+</div>
+</td>
+<td class="px-6 py-4 text-body-md text-secondary">2 mins ago</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 rounded-lg hover:bg-surface-container-high transition-colors text-outline group-hover:text-primary">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="Professional headshot of a middle-aged male manager with a kind expression, wearing a navy blue polo shirt. Clean studio lighting creates a sophisticated yet approachable atmosphere. Neutral white background with soft shadows, high-resolution and clean composition." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBqjU-N8p2wkuez3ox46T2UtnLqPt1trBPwmt5UA9wpjABYHz9nkRVeZh_8MpnSWxdO5oaWR1yY7sKUOjaKdNBUDbhM4CMn82HPig8outuaReOGK8LxoTn0oCiF2J13s1GeHwHpFDVLRTqt8wWN6VAA16V_g2xu7eUYVJkkvcn41O90HEvAxCq6HdYqPfAKa9K83Il6BD96wz1pNDvRqxdZQu3K29F63pPEh8rcuL9kgkJ7I9rwxzkUARPM-glS4UQLnd7oBOyY8bQz"/>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-background">Michael Chen</p>
+<p class="text-xs text-secondary">m.chen@assetflow.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-secondary-container/20 text-secondary text-[12px] font-bold rounded-full uppercase tracking-wider">Manager</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-green-500"></span>
+<span class="text-body-md">Active</span>
+</div>
+</td>
+<td class="px-6 py-4 text-body-md text-secondary">4 hours ago</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 rounded-lg hover:bg-surface-container-high transition-colors text-outline group-hover:text-primary">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</td>
+</tr>
+<tr class="hover:bg-surface-container-lowest transition-colors group">
+<td class="px-6 py-4">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 rounded-full overflow-hidden border border-outline-variant">
+<img class="w-full h-full object-cover" data-alt="Portrait of a creative professional male in his 20s, wearing a dark turtleneck. The lighting is soft and directional, emphasizing the minimalist aesthetic. High-quality photography with a clean, airy feeling in a light-mode color palette of soft greys and whites." src="https://lh3.googleusercontent.com/aida-public/AB6AXuA519AL0RIpNzOHQFYLqmdtlUfCR9qeQBQEAC9gqciK1A4kLKAHXrEL0E8ELH0PIewl5WrBaS_M3Kn1N3f--lQNGIV-iU9YlYqOhz5hjBAeBoSkatx1aeqjQED9DZNaIe0Y2ZVf6xQ2Yvv98ulCOVNSLyz3sPuUZTdxhRzRJZAW1zz2HDWmrpTverccbSV8ixVNgEfsAC9dmiDhb809s5wRgaWNgeTda9bZwp2lJa25UjXcqzVSdF90jJFnoN10e29wVA-wUxM5uWFA"/>
+</div>
+<div>
+<p class="font-body-md text-body-md text-on-background">Liam Rodriguez</p>
+<p class="text-xs text-secondary">l.rod@assetflow.com</p>
+</div>
+</div>
+</td>
+<td class="px-6 py-4">
+<span class="px-3 py-1 bg-surface-container-highest text-on-surface-variant text-[12px] font-bold rounded-full uppercase tracking-wider">Viewer</span>
+</td>
+<td class="px-6 py-4">
+<div class="flex items-center gap-2">
+<span class="w-2 h-2 rounded-full bg-outline-variant"></span>
+<span class="text-body-md">Away</span>
+</div>
+</td>
+<td class="px-6 py-4 text-body-md text-secondary">Yesterday</td>
+<td class="px-6 py-4 text-right">
+<button class="p-2 rounded-lg hover:bg-surface-container-high transition-colors text-outline group-hover:text-primary">
+<span class="material-symbols-outlined">edit</span>
+</button>
+</td>
+</tr>
+</tbody>
+</table>
+</div>
+</section>
+<!-- Integrations Panel -->
+<section class="tab-content hidden space-y-6" id="content-integrations">
+<div class="mb-4">
+<h3 class="font-headline-md text-headline-md">Connected Services</h3>
+<p class="text-secondary font-body-md">Automate workflows by connecting your favorite enterprise tools.</p>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+<!-- Slack -->
+<div class="glass-panel border border-outline-variant/30 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group border-l-4 border-l-[#4A154B]">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100">
+<span class="material-symbols-outlined text-[32px] text-[#4A154B]">chat</span>
+</div>
+<span class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded uppercase">Active</span>
+</div>
+<h4 class="font-headline-md text-[18px] mb-2">Slack</h4>
+<p class="text-body-md text-secondary mb-6 h-12 line-clamp-2">Get real-time alerts and maintenance notifications directly in your Slack channels.</p>
+<div class="flex items-center justify-between">
+<button class="text-primary font-sidebar-item text-sidebar-item flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                        Configure <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+<button class="text-error font-body-md text-sm">Disconnect</button>
+</div>
+</div>
+<!-- Jira -->
+<div class="glass-panel border border-outline-variant/30 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group border-l-4 border-l-[#0052CC]">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100">
+<span class="material-symbols-outlined text-[32px] text-[#0052CC]">task_alt</span>
+</div>
+<span class="px-2 py-1 bg-green-100 text-green-700 text-[10px] font-bold rounded uppercase">Active</span>
+</div>
+<h4 class="font-headline-md text-[18px] mb-2">Atlassian Jira</h4>
+<p class="text-body-md text-secondary mb-6 h-12 line-clamp-2">Sync maintenance tickets with Jira projects for seamless dev-ops coordination.</p>
+<div class="flex items-center justify-between">
+<button class="text-primary font-sidebar-item text-sidebar-item flex items-center gap-1 group-hover:translate-x-1 transition-transform">
+                                        Configure <span class="material-symbols-outlined text-[16px]">arrow_forward</span>
+</button>
+<button class="text-error font-body-md text-sm">Disconnect</button>
+</div>
+</div>
+<!-- Microsoft Teams -->
+<div class="glass-panel border border-outline-variant/30 rounded-2xl p-6 shadow-sm hover:shadow-md transition-all group border-l-4 border-l-outline-variant">
+<div class="flex justify-between items-start mb-6">
+<div class="w-12 h-12 flex items-center justify-center rounded-xl bg-slate-50 border border-slate-100">
+<span class="material-symbols-outlined text-[32px] text-[#464EB8]">groups</span>
+</div>
+<span class="px-2 py-1 bg-surface-container-highest text-secondary text-[10px] font-bold rounded uppercase">Not Connected</span>
+</div>
+<h4 class="font-headline-md text-[18px] mb-2">Microsoft Teams</h4>
+<p class="text-body-md text-secondary mb-6 h-12 line-clamp-2">Collaborate on asset reports and share live data dashboards in Teams.</p>
+<div class="flex items-center justify-between">
+<button class="bg-primary-container text-on-primary-container px-4 py-2 rounded-lg font-sidebar-item text-sidebar-item w-full flex items-center justify-center gap-2 hover:brightness-110 active:scale-95 transition-all">
+<span class="material-symbols-outlined text-[18px]">add</span>
+                                        Connect
+                                    </button>
+</div>
+</div>
+</div>
+</section>
+<!-- Notifications Panel (Placeholder) -->
+<section class="tab-content hidden space-y-6" id="content-notifications">
+<div class="glass-panel border border-outline-variant/30 rounded-2xl p-8 shadow-sm">
+<h3 class="font-headline-md text-headline-md mb-6">Alert Preferences</h3>
+<div class="space-y-4">
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-xl">
+<div>
+<p class="font-body-md text-on-background">Critical Asset Failure</p>
+<p class="text-xs text-secondary">Immediate email and push notifications for urgent outages.</p>
+</div>
+<div class="w-12 h-6 bg-primary rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
+</div>
+</div>
+<div class="flex items-center justify-between p-4 bg-surface-container-low rounded-xl">
+<div>
+<p class="font-body-md text-on-background">Weekly Usage Reports</p>
+<p class="text-xs text-secondary">Receive an aggregated summary of all asset movements.</p>
+</div>
+<div class="w-12 h-6 bg-primary rounded-full relative cursor-pointer">
+<div class="absolute right-1 top-1 w-4 h-4 bg-white rounded-full"></div>
+</div>
+</div>
+</div>
+</div>
+</section>
+<!-- Billing Panel (Placeholder) -->
+<section class="tab-content hidden space-y-6" id="content-billing">
+<div class="glass-panel border border-outline-variant/30 rounded-2xl p-8 shadow-sm">
+<div class="flex justify-between items-start mb-8">
+<div>
+<span class="px-3 py-1 bg-primary text-on-primary text-[10px] font-bold rounded-full uppercase tracking-widest">Enterprise Plan</span>
+<h3 class="font-headline-lg text-headline-lg mt-2">$2,499.00 / month</h3>
+<p class="text-secondary font-body-md">Next billing date: November 24, 2024</p>
+</div>
+<button class="px-6 py-2 border border-outline text-secondary rounded-xl font-sidebar-item text-sidebar-item hover:bg-surface-container-high">Update Plan</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<div class="p-6 border border-outline-variant/40 rounded-2xl">
+<p class="font-label-caps text-secondary uppercase mb-2">Payment Method</p>
+<div class="flex items-center gap-4">
+<div class="w-12 h-8 bg-slate-100 rounded flex items-center justify-center font-bold text-slate-400">VISA</div>
+<p class="font-body-md text-on-background">•••• •••• •••• 4242</p>
+</div>
+</div>
+<div class="p-6 border border-outline-variant/40 rounded-2xl">
+<p class="font-label-caps text-secondary uppercase mb-2">Billing Email</p>
+<p class="font-body-md text-on-background">accounts@assetflowcorp.com</p>
+</div>
+</div>
+</div>
+</section>
+</div>
+</div>
+</div>
+<!-- FAB (Contextual for Settings: Help) -->
+<button class="fixed bottom-8 right-8 w-14 h-14 bg-primary text-on-primary rounded-full shadow-2xl flex items-center justify-center hover:scale-110 active:scale-95 transition-all z-50">
+<span class="material-symbols-outlined text-[28px]">support_agent</span>
+</button>
+</main>
+<script>
+        function switchTab(tabId) {
+            // Hide all content
+            const contents = document.querySelectorAll('.tab-content');
+            contents.forEach(c => c.classList.add('hidden'));
+
+            // Remove active classes from all buttons
+            const buttons = document.querySelectorAll('.tab-btn');
+            buttons.forEach(b => {
+                b.classList.remove('bg-primary-container', 'text-on-primary-container');
+                b.classList.add('text-secondary', 'hover:bg-surface-container-high');
+            });
+
+            // Show current content
+            const activeContent = document.getElementById('content-' + tabId);
+            if(activeContent) activeContent.classList.remove('hidden');
+
+            // Set current button as active
+            const activeBtn = document.getElementById('tab-' + tabId);
+            if(activeBtn) {
+                activeBtn.classList.add('bg-primary-container', 'text-on-primary-container');
+                activeBtn.classList.remove('text-secondary', 'hover:bg-surface-container-high');
+            }
+        }
+
+        // Initialize micro-interactions
+        document.querySelectorAll('button').forEach(btn => {
+            btn.addEventListener('mousedown', () => {
+                btn.style.transform = 'scale(0.95)';
+            });
+            btn.addEventListener('mouseup', () => {
+                btn.style.transform = '';
+            });
+            btn.addEventListener('mouseleave', () => {
+                btn.style.transform = '';
+            });
+        });
+    </script>
+</body></html>
