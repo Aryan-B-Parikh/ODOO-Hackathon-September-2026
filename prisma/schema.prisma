@@ -125,58 +125,112 @@ enum DepreciationMethod {
   UNITS_OF_PRODUCTION
 }
 
+enum EmailStatus {
+  PENDING
+  SENT
+  FAILED
+}
+
 // ==========================================
 // MODELS
 // ==========================================
 
 model Organization {
-  id        String   @id @default(uuid())
-  name      String
-  code      String   @unique
+  id                      String                    @id @default(uuid())
+  name                    String
+  code                    String                    @unique
   
   // Auditable & Soft Delete
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
-  isDeleted Boolean  @default(false)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  deletedAt               DateTime?
+  isDeleted               Boolean                   @default(false)
 
   // Back-references for multitenancy
-  users           User[]
-  employees       Employee[]
-  departments     Department[]
-  categories      AssetCategory[]
-  assets          Asset[]
-  vendors         Vendor[]
-  auditCycles     AuditCycle[]
+  users                   User[]
+  employees               Employee[]
+  departments             Department[]
+  categories              AssetCategory[]
+  assets                  Asset[]
+  vendors                 Vendor[]
+  auditCycles             AuditCycle[]
+  locations               Location[]
+  allocations             AssetAllocation[]
+  bookings                ResourceBooking[]
+  maintenances            MaintenanceRequest[]
+  transfers               AssetTransferRequest[]
+  auditResults            AuditAssetResult[]
+  discrepancies           AuditDiscrepancy[]
+  histories               AssetHistory[]
+  emailQueues             EmailQueue[]
+  notificationPreferences NotificationPreference[]
+  bookingReminders        ResourceBookingReminder[]
+  maintenanceWorkLogs     MaintenanceWorkLog[]
+  maintenanceAttachments  MaintenanceAttachment[]
+  auditResultHistories    AuditResultHistory[]
+  notifications           Notification[]
 
   @@index([isDeleted])
 }
 
 model User {
-  id                  String       @id @default(uuid())
-  email               String       @unique
-  passwordHash        String
-  emailVerified       Boolean      @default(false)
-  status              UserStatus   @default(ACTIVE)
+  id                      String                    @id @default(uuid())
+  email                   String                    @unique
+  passwordHash            String
+  emailVerified           Boolean                   @default(false)
+  status                  UserStatus                @default(ACTIVE)
   
+  // Brute-force protection & Lockout Metrics
+  lastLoginAt             DateTime?
+  loginAttempts           Int                       @default(0)
+  lockoutUntil            DateTime?
+
   // Multitenancy
-  organizationId      String
-  organization        Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organizationId          String
+  organization            Organization              @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  // Employee-Only Signup enforcement (Strict 1:1 validation)
+  employeeId              String                    @unique
+  employee                Employee                  @relation(fields: [employeeId], references: [id], onDelete: Cascade)
 
   // Relations
-  employee            Employee?
-  sessions            Session[]
-  refreshTokens       RefreshToken[]
-  emailVerifications  EmailVerification[]
-  passwordResets      PasswordReset[]
-  userRoles           UserRole[]
-  activityLogs        ActivityLog[]
+  sessions                Session[]
+  refreshTokens           RefreshToken[]
+  emailVerifications      EmailVerification[]
+  passwordResets          PasswordReset[]
+  userRoles               UserRole[]
+  activityLogs            ActivityLog[]
+  notificationPreferences NotificationPreference[]
+
+  // Audit Trails Back-references (Creator, Updater, Deleter)
+  createdAssets           Asset[]                   @relation("AssetCreator")
+  updatedAssets           Asset[]                   @relation("AssetUpdater")
+  deletedAssets           Asset[]                   @relation("AssetDeleter")
+
+  createdCategories       AssetCategory[]           @relation("CategoryCreator")
+  updatedCategories       AssetCategory[]           @relation("CategoryUpdater")
+  deletedCategories       AssetCategory[]           @relation("CategoryDeleter")
+
+  createdDepartments      Department[]              @relation("DepartmentCreator")
+  updatedDepartments      Department[]              @relation("DepartmentUpdater")
+  deletedDepartments      Department[]              @relation("DepartmentDeleter")
+
+  createdMaintenances     MaintenanceRequest[]      @relation("MaintenanceCreator")
+  updatedMaintenances     MaintenanceRequest[]      @relation("MaintenanceUpdater")
+  deletedMaintenances     MaintenanceRequest[]      @relation("MaintenanceDeleter")
+
+  createdAudits           AuditCycle[]              @relation("AuditCycleCreator")
+  updatedAudits           AuditCycle[]              @relation("AuditCycleUpdater")
+  deletedAudits           AuditCycle[]              @relation("AuditCycleDeleter")
+
+  assetHistories          AssetHistory[]            @relation("UserAssetHistories")
+  auditResultHistories    AuditResultHistory[]      @relation("UserAuditResultHistories")
 
   // Auditable & Soft Delete
-  createdAt           DateTime     @default(now())
-  updatedAt           DateTime     @updatedAt
-  deletedAt           DateTime?
-  isDeleted           Boolean      @default(false)
+  createdAt               DateTime                  @default(now())
+  updatedAt               DateTime                  @updatedAt
+  deletedAt               DateTime?
+  isDeleted               Boolean                   @default(false)
 
   @@index([organizationId])
   @@index([status])
@@ -185,7 +239,7 @@ model User {
 
 model Role {
   id          String   @id @default(uuid())
-  name        String   @unique // e.g. "ADMIN", "ASSET_MANAGER", "DEPARTMENT_HEAD", "EMPLOYEE"
+  name        String   @unique
   description String?
   
   permissions RolePermission[]
@@ -202,7 +256,7 @@ model Role {
 
 model Permission {
   id          String   @id @default(uuid())
-  name        String   @unique // e.g. "asset.create", "asset.allocate"
+  name        String   @unique
   description String?
 
   roles       RolePermission[]
@@ -301,28 +355,27 @@ model PasswordReset {
 }
 
 model Employee {
-  id           String         @id @default(uuid())
-  name         String
-  email        String         @unique
-  phone        String?
-  status       EmployeeStatus @default(ACTIVE)
+  id             String         @id @default(uuid())
+  name           String
+  email          String         @unique
+  phone          String?
+  status         EmployeeStatus @default(ACTIVE)
   
-  // Link to User authentication profile
-  userId       String?        @unique
-  user         User?          @relation(fields: [userId], references: [id], onDelete: SetNull)
+  // Back-relation to User configuration
+  user           User?
 
   // Multitenancy
   organizationId String
-  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   // Department Relationship
-  departmentId String?
-  department   Department?    @relation("EmployeeDepartment", fields: [departmentId], references: [id], onDelete: Restrict)
+  departmentId   String?
+  department     Department?    @relation("EmployeeDepartment", fields: [departmentId], references: [id], onDelete: Restrict)
 
   // Self-referencing manager mapping
-  managerId    String?
-  manager      Employee?      @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
-  subordinates Employee[]     @relation("EmployeeManager")
+  managerId      String?
+  manager        Employee?      @relation("EmployeeManager", fields: [managerId], references: [id], onDelete: SetNull)
+  subordinates   Employee[]     @relation("EmployeeManager")
 
   // One-to-one mapping for headed department
   headedDepartment Department? @relation("DepartmentHead")
@@ -343,6 +396,7 @@ model Employee {
   raisedMaintenance   MaintenanceRequest[] @relation("MaintenanceRequestor")
   actionedMaintenance MaintenanceRequest[] @relation("MaintenanceActioner")
   assignedMaintenance MaintenanceRequest[] @relation("MaintenanceTechnician")
+  maintenanceWorkLogs MaintenanceWorkLog[]
 
   // Auditing
   auditedCycles         AuditAuditor[]
@@ -370,7 +424,7 @@ model Department {
   name           String
   code           String           @unique
   status         DepartmentStatus @default(ACTIVE)
-  path           String?          // Materialized path for tree traversal e.g. "root/eng/dev"
+  path           String?          // Materialized path for tree traversal
 
   // Multitenancy
   organizationId String
@@ -392,6 +446,15 @@ model Department {
   transferRequests AssetTransferRequest[] @relation("TargetDepartment")
   bookings         ResourceBooking[]
   auditCycles      AuditCycle[]
+  assetHistories   AssetHistory[]
+
+  // Audit support
+  createdByUserId String?
+  createdByUser   User?           @relation("DepartmentCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedByUserId String?
+  updatedByUser   User?           @relation("DepartmentUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  deletedByUserId String?
+  deletedByUser   User?           @relation("DepartmentDeleter", fields: [deletedByUserId], references: [id], onDelete: Restrict)
 
   // Auditable & Soft Delete
   createdAt DateTime @default(now())
@@ -416,6 +479,14 @@ model AssetCategory {
 
   assets             Asset[]
 
+  // Audit support
+  createdByUserId    String?
+  createdByUser      User?        @relation("CategoryCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedByUserId    String?
+  updatedByUser      User?        @relation("CategoryUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  deletedByUserId    String?
+  deletedByUser      User?        @relation("CategoryDeleter", fields: [deletedByUserId], references: [id], onDelete: Restrict)
+
   // Auditable & Soft Delete
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -426,54 +497,87 @@ model AssetCategory {
   @@index([isDeleted])
 }
 
+model Location {
+  id             String         @id @default(uuid())
+  name           String
+  code           String         @unique
+  parentId       String?
+  parent         Location?      @relation("LocationHierarchy", fields: [parentId], references: [id], onDelete: Restrict)
+  children       Location[]     @relation("LocationHierarchy")
+  organizationId String
+  organization   Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+  assets         Asset[]
+  assetHistories AssetHistory[]
+
+  createdAt      DateTime       @default(now())
+  updatedAt      DateTime       @updatedAt
+  deletedAt      DateTime?
+  isDeleted      Boolean        @default(false)
+
+  @@index([organizationId])
+  @@index([parentId])
+}
+
 model Asset {
-  id              String      @id @default(uuid())
-  name            String
-  categoryId      String
-  category        AssetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  id                     String      @id @default(uuid())
+  name                   String
+  categoryId             String
+  category               AssetCategory @relation(fields: [categoryId], references: [id], onDelete: Restrict)
   
-  assetTag        String      @unique // e.g. AF-0001
-  serialNumber    String?     @unique
-  barcode         String?     @unique
-  qrCode          String?     @unique
+  assetTag               String      @unique // e.g. AF-0001
+  serialNumber           String?     @unique
+  barcode                String?     @unique
+  qrCode                 String?     @unique
   
-  acquisitionDate DateTime?
-  acquisitionCost Decimal?    @db.Decimal(12, 2)
-  condition       Condition   @default(NEW)
-  location        String
-  sharedBookable  Boolean     @default(false)
-  status          AssetStatus @default(AVAILABLE)
+  acquisitionDate        DateTime?
+  acquisitionCost        Decimal?    @db.Decimal(12, 2)
+  condition              Condition   @default(NEW)
+  expectedLifetimeMonths Int?        // Estimated useful lifetime in months
+  expectedRetirementDate DateTime?   // Calculated retirement forecast
+  customFieldValues      Json?       // Stores actual dynamic custom field parameters
+
+  // Hierarchical location relationship
+  locationId             String
+  location               Location    @relation(fields: [locationId], references: [id], onDelete: Restrict)
+
+  sharedBookable         Boolean     @default(false)
+  status                 AssetStatus @default(AVAILABLE)
 
   // Multitenancy
-  organizationId  String
-  organization    Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
-
-  // Prevent double-allocation using unique current allocation
-  currentAllocationId String?          @unique
-  currentAllocation   AssetAllocation? @relation("CurrentAllocation", fields: [currentAllocationId], references: [id], onDelete: SetNull)
+  organizationId         String
+  organization           Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   // Departmental Ownership
-  departmentId String?
-  department   Department? @relation("AssetDepartment", fields: [departmentId], references: [id], onDelete: Restrict)
+  departmentId           String?
+  department             Department? @relation("AssetDepartment", fields: [departmentId], references: [id], onDelete: Restrict)
 
   // Supplier details
-  vendorId     String?
-  vendor       Vendor?     @relation(fields: [vendorId], references: [id], onDelete: Restrict)
+  vendorId               String?
+  vendor                 Vendor?     @relation(fields: [vendorId], references: [id], onDelete: Restrict)
 
-  // Normalized relations instead of flat lists
-  images       AssetImage[]
-  documents    AssetDocument[]
-  warranties   AssetWarranty[]
-  insurances   AssetInsurance[]
-  depreciations AssetDepreciation[]
+  // Normalized media, warranties, insurances
+  images                 AssetImage[]
+  documents              AssetDocument[]
+  warranties             AssetWarranty[]
+  insurances             AssetInsurance[]
+  depreciations          AssetDepreciation[]
 
-  // Operational records (Retention history)
-  allocations      AssetAllocation[]      @relation("AssetHistory")
-  transfers        AssetTransferRequest[]
-  bookings         ResourceBooking[]
-  maintenances     MaintenanceRequest[]
-  auditResults     AuditAssetResult[]
-  discrepancies    AuditDiscrepancy[]
+  // Transaction history - onDelete: Restrict (Protects audit trail logs from deletion)
+  allocations            AssetAllocation[]      @relation("AssetHistory")
+  transfers              AssetTransferRequest[]
+  bookings               ResourceBooking[]
+  maintenances           MaintenanceRequest[]
+  auditResults           AuditAssetResult[]
+  discrepancies          AuditDiscrepancy[]
+  histories              AssetHistory[]
+
+  // Audit support
+  createdByUserId        String?
+  createdByUser          User?        @relation("AssetCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedByUserId        String?
+  updatedByUser          User?        @relation("AssetUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  deletedByUserId        String?
+  deletedByUser          User?        @relation("AssetDeleter", fields: [deletedByUserId], references: [id], onDelete: Restrict)
 
   // Auditable & Soft Delete
   createdAt DateTime @default(now())
@@ -485,7 +589,6 @@ model Asset {
   @@index([status])
   @@index([categoryId])
   @@index([departmentId])
-  @@index([location])
   @@index([isDeleted])
   @@index([qrCode])
   @@index([barcode])
@@ -594,132 +697,167 @@ model AssetDepreciation {
 }
 
 model AssetAllocation {
-  id         String @id @default(uuid())
-  assetId    String
-  asset      Asset  @relation("AssetHistory", fields: [assetId], references: [id], onDelete: Cascade)
+  id                 String           @id @default(uuid())
+  assetId            String
+  asset              Asset            @relation("AssetHistory", fields: [assetId], references: [id], onDelete: Restrict) // Audit Integrity protected
 
   // Can be assigned to Employee OR Department
-  employeeId   String?
-  employee     Employee?   @relation("EmployeeAllocations", fields: [employeeId], references: [id], onDelete: Restrict)
-  departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  employeeId         String?
+  employee           Employee?        @relation("EmployeeAllocations", fields: [employeeId], references: [id], onDelete: Restrict)
+  departmentId       String?
+  department         Department?      @relation(fields: [departmentId], references: [id], onDelete: Restrict)
 
-  allocatedById String
-  allocatedBy   Employee @relation("AllocationCreator", fields: [allocatedById], references: [id], onDelete: Restrict)
+  allocatedById      String
+  allocatedBy        Employee         @relation("AllocationCreator", fields: [allocatedById], references: [id], onDelete: Restrict)
 
   allocatedAt        DateTime         @default(now())
   expectedReturnDate DateTime?
   actualReturnDate   DateTime?
   status             AllocationStatus @default(ACTIVE)
 
-  checkoutCondition Condition
-  checkinCondition  Condition?
-  checkoutNotes     String?
-  checkinNotes      String?
+  checkoutCondition  Condition
+  checkinCondition   Condition?
+  checkoutNotes      String?
+  checkinNotes       String?
 
-  // Current allocation check
-  currentForAsset Asset? @relation("CurrentAllocation")
+  // Multitenancy denormalization
+  organizationId     String
+  organization       Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   // Auditable & Soft Delete
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
-  isDeleted Boolean  @default(false)
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+  deletedAt          DateTime?
+  isDeleted          Boolean          @default(false)
 
   @@index([employeeId, status])
   @@index([departmentId, status])
   @@index([status])
   @@index([isDeleted])
+  @@index([organizationId])
+  @@index([expectedReturnDate, status]) // Overdue check index
 }
 
 model AssetTransferRequest {
-  id      String @id @default(uuid())
-  assetId String
-  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id                 String         @id @default(uuid())
+  assetId            String
+  asset              Asset          @relation(fields: [assetId], references: [id], onDelete: Restrict) // Audit Integrity protected
 
-  requestorId String
-  requestor   Employee @relation("TransferRequestor", fields: [requestorId], references: [id], onDelete: Restrict)
+  requestorId        String
+  requestor          Employee       @relation("TransferRequestor", fields: [requestorId], references: [id], onDelete: Restrict)
 
   // Destination targets
   targetEmployeeId   String?
-  targetEmployee     Employee?   @relation("TransferTargetEmployee", fields: [targetEmployeeId], references: [id], onDelete: Restrict)
+  targetEmployee     Employee?      @relation("TransferTargetEmployee", fields: [targetEmployeeId], references: [id], onDelete: Restrict)
   targetDepartmentId String?
-  targetDepartment   Department? @relation("TargetDepartment", fields: [targetDepartmentId], references: [id], onDelete: Restrict)
+  targetDepartment   Department?    @relation("TargetDepartment", fields: [targetDepartmentId], references: [id], onDelete: Restrict)
 
-  status TransferStatus @default(PENDING)
+  status             TransferStatus @default(PENDING)
 
-  actionedById String?
-  actionedBy   Employee? @relation("TransferActioner", fields: [actionedById], references: [id], onDelete: Restrict)
-  actionedAt   DateTime?
+  actionedById       String?
+  actionedBy         Employee?      @relation("TransferActioner", fields: [actionedById], references: [id], onDelete: Restrict)
+  actionedAt         DateTime?
 
-  requestNotes   String?
-  actionNotes    String?
-  rejectionReason String?
+  requestNotes       String?
+  actionNotes        String?
+  rejectionReason    String?
+
+  // Multitenancy denormalization
+  organizationId     String
+  organization       Organization   @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   // Auditable & Soft Delete
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
-  isDeleted Boolean  @default(false)
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+  deletedAt          DateTime?
+  isDeleted          Boolean        @default(false)
 
   @@index([status])
   @@index([isDeleted])
+  @@index([organizationId])
 }
 
 model ResourceBooking {
-  id      String @id @default(uuid())
-  assetId String
-  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id             String          @id @default(uuid())
+  assetId        String
+  asset          Asset           @relation(fields: [assetId], references: [id], onDelete: Restrict) // Audit Integrity protected
 
-  bookedById String
-  bookedBy   Employee @relation(fields: [bookedById], references: [id], onDelete: Restrict)
+  bookedById     String
+  bookedBy       Employee        @relation(fields: [bookedById], references: [id], onDelete: Restrict)
 
-  departmentId String?
-  department   Department? @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  departmentId   String?
+  department     Department?     @relation(fields: [departmentId], references: [id], onDelete: Restrict)
 
-  startTime DateTime
-  endTime   DateTime
-  status    BookingStatus @default(UPCOMING)
-  notes     String?
+  startTime      DateTime
+  endTime        DateTime
+  status         BookingStatus   @default(UPCOMING)
+  notes          String?
+
+  // Recurrence rule configurations
+  recurrenceRule String?         // RFC 5545 RRULE string
+  seriesId       String?         // Links occurrences to a parent series
+  reminders      ResourceBookingReminder[]
+
+  // Multitenancy denormalization
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   // Auditable & Soft Delete
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
-  isDeleted Boolean  @default(false)
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+  deletedAt      DateTime?
+  isDeleted      Boolean         @default(false)
 
   // Multi-column index for overlap searches and scaling query optimization
   @@index([assetId, startTime, endTime])
   @@index([assetId, status, startTime])
   @@index([status])
   @@index([isDeleted])
+  @@index([organizationId])
+  @@index([seriesId])
+  @@index([bookedById])
 }
 
 model MaintenanceRequest {
-  id      String @id @default(uuid())
-  assetId String
-  asset   Asset  @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id                 String             @id @default(uuid())
+  assetId            String
+  asset              Asset              @relation(fields: [assetId], references: [id], onDelete: Restrict) // Audit Integrity protected
 
-  raisedById String
-  raisedBy   Employee @relation("MaintenanceRequestor", fields: [raisedById], references: [id], onDelete: Restrict)
+  raisedById         String
+  raisedBy           Employee           @relation("MaintenanceRequestor", fields: [raisedById], references: [id], onDelete: Restrict)
 
-  description String
-  priority    Priority          @default(MEDIUM)
-  status      MaintenanceStatus @default(PENDING)
-  photoUrl    String?
+  description        String
+  priority           Priority           @default(MEDIUM)
+  status             MaintenanceStatus  @default(PENDING)
 
-  approvedById String?
-  approvedBy   Employee? @relation("MaintenanceActioner", fields: [approvedById], references: [id], onDelete: Restrict)
-  approvedAt   DateTime?
+  approvedById       String?
+  approvedBy         Employee?          @relation("MaintenanceActioner", fields: [approvedById], references: [id], onDelete: Restrict)
+  approvedAt         DateTime?
 
   technicianId       String?
-  technician         Employee? @relation("MaintenanceTechnician", fields: [technicianId], references: [id], onDelete: Restrict)
+  technician         Employee?          @relation("MaintenanceTechnician", fields: [technicianId], references: [id], onDelete: Restrict)
   externalTechnician String?
 
-  estimatedCost      Decimal?  @db.Decimal(12, 2)
-  actualCost         Decimal?  @db.Decimal(12, 2)
+  estimatedCost      Decimal?           @db.Decimal(12, 2)
+  actualCost         Decimal?           @db.Decimal(12, 2)
   resolutionNotes    String?
   resolvedAt         DateTime?
+
+  // Logs & attachments
+  attachments        MaintenanceAttachment[]
+  workLogs           MaintenanceWorkLog[]
+
+  // Multitenancy denormalization
+  organizationId     String
+  organization       Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  // Audit support
+  createdByUserId    String?
+  createdByUser      User?              @relation("MaintenanceCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedByUserId    String?
+  updatedByUser      User?              @relation("MaintenanceUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  deletedByUserId    String?
+  deletedByUser      User?              @relation("MaintenanceDeleter", fields: [deletedByUserId], references: [id], onDelete: Restrict)
 
   // Auditable & Soft Delete
   createdAt DateTime @default(now())
@@ -730,6 +868,9 @@ model MaintenanceRequest {
   @@index([status])
   @@index([assetId, status])
   @@index([isDeleted])
+  @@index([organizationId])
+  @@index([technicianId, status])
+  @@index([raisedById])
 }
 
 model AuditCycle {
@@ -759,6 +900,14 @@ model AuditCycle {
   results       AuditAssetResult[]
   discrepancies AuditDiscrepancy[]
 
+  // Audit support
+  createdByUserId String?
+  createdByUser   User?           @relation("AuditCycleCreator", fields: [createdByUserId], references: [id], onDelete: Restrict)
+  updatedByUserId String?
+  updatedByUser   User?           @relation("AuditCycleUpdater", fields: [updatedByUserId], references: [id], onDelete: Restrict)
+  deletedByUserId String?
+  deletedByUser   User?           @relation("AuditCycleDeleter", fields: [deletedByUserId], references: [id], onDelete: Restrict)
+
   // Auditable & Soft Delete
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -786,74 +935,91 @@ model AuditAuditor {
 }
 
 model AuditAssetResult {
-  id           String     @id @default(uuid())
-  auditCycleId String
-  auditCycle   AuditCycle @relation(fields: [auditCycleId], references: [id], onDelete: Cascade)
-  assetId      String
-  asset        Asset      @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  id             String               @id @default(uuid())
+  auditCycleId   String
+  auditCycle     AuditCycle           @relation(fields: [auditCycleId], references: [id], onDelete: Cascade)
+  assetId        String
+  asset          Asset                @relation(fields: [assetId], references: [id], onDelete: Cascade)
 
-  auditorId    String
-  auditor      Employee   @relation(fields: [auditorId], references: [id], onDelete: Restrict)
+  auditorId      String
+  auditor        Employee             @relation(fields: [auditorId], references: [id], onDelete: Restrict)
 
-  status       AuditAssetStatus @default(PENDING)
-  notes        String?
-  verifiedAt   DateTime?
+  status         AuditAssetStatus     @default(PENDING)
+  notes          String?
+  verifiedAt     DateTime?
 
-  discrepancy  AuditDiscrepancy?
+  discrepancy    AuditDiscrepancy?
+  histories      AuditResultHistory[]
 
-  createdAt    DateTime   @default(now())
-  updatedAt    DateTime   @updatedAt
+  // Multitenancy denormalization
+  organizationId String
+  organization   Organization         @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  createdAt      DateTime             @default(now())
+  updatedAt      DateTime             @updatedAt
 
   @@unique([auditCycleId, assetId])
+  @@index([organizationId])
 }
 
 model AuditDiscrepancy {
-  id                 String     @id @default(uuid())
+  id                 String            @id @default(uuid())
   auditCycleId       String
-  auditCycle         AuditCycle @relation(fields: [auditCycleId], references: [id], onDelete: Cascade)
+  auditCycle         AuditCycle        @relation(fields: [auditCycleId], references: [id], onDelete: Cascade)
   assetId            String
-  asset              Asset      @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  asset              Asset             @relation(fields: [assetId], references: [id], onDelete: Cascade)
   
-  auditAssetResultId String     @unique
-  auditAssetResult   AuditAssetResult @relation(fields: [auditAssetResultId], references: [id], onDelete: Cascade)
+  auditAssetResultId String            @unique
+  auditAssetResult   AuditAssetResult  @relation(fields: [auditAssetResultId], references: [id], onDelete: Cascade)
 
-  reportedStatus     AuditAssetStatus // Only MISSING or DAMAGED
+  reportedStatus     AuditAssetStatus  // Only MISSING or DAMAGED
   resolutionStatus   DiscrepancyStatus @default(OPEN)
 
   resolvedById       String?
-  resolvedBy         Employee?  @relation(fields: [resolvedById], references: [id], onDelete: Restrict)
+  resolvedBy         Employee?         @relation(fields: [resolvedById], references: [id], onDelete: Restrict)
   resolvedAt         DateTime?
   resolutionNotes    String?
 
+  // Multitenancy denormalization
+  organizationId     String
+  organization       Organization      @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
   // Auditable & Soft Delete
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
-  isDeleted Boolean  @default(false)
+  createdAt          DateTime          @default(now())
+  updatedAt          DateTime          @updatedAt
+  deletedAt          DateTime?
+  isDeleted          Boolean           @default(false)
 
   @@index([resolutionStatus])
   @@index([isDeleted])
+  @@index([organizationId])
 }
 
 model Notification {
-  id          String           @id @default(uuid())
-  recipientId String
-  recipient   Employee         @relation(fields: [recipientId], references: [id], onDelete: Cascade)
+  id             String           @id @default(uuid())
+  recipientId    String
+  recipient      Employee         @relation(fields: [recipientId], references: [id], onDelete: Cascade)
   
-  title       String
-  message     String
-  type        NotificationType
-  isRead      Boolean          @default(false)
-  readAt      DateTime?
-  referenceId String?          // Holds target object uuid
+  title          String
+  message        String
+  type           NotificationType
+  isRead         Boolean          @default(false)
+  readAt         DateTime?
+  referenceId    String?          // Holds target object uuid
+
+  // Multitenancy denormalization
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
 
   // Auditable & Soft Delete
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  deletedAt DateTime?
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+  deletedAt      DateTime?
 
   @@index([recipientId, isRead])
   @@index([recipientId, createdAt])
+  @@index([organizationId])
+  @@index([createdAt])
 }
 
 model ActivityLog {
@@ -861,12 +1027,13 @@ model ActivityLog {
   userId       String?
   user         User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
 
-  action       String    // e.g. "USER_LOGIN", "ASSET_ALLOCATE"
+  action       String    // e.g. "USER_LOGIN", "ASSET_ALLOCATE", "AUDIT_CLOSE"
   entityType   String    // e.g. "Asset", "AuditCycle"
   entityId     String?
-  oldValue     Json?     // Stores previous state for audit compliance
-  newValue     Json?     // Stores updated state values
+  oldValue     Json?     // Stores delta updates or state values
+  newValue     Json?     // Stores delta updates or state values
   severity     Severity  @default(INFO)
+  module       String    // e.g. "AUTH", "ASSET", "BOOKING"
 
   ipAddress    String?
   userAgent    String?
@@ -880,4 +1047,153 @@ model ActivityLog {
 
   @@index([userId, createdAt])
   @@index([entityType, entityId])
+  @@index([createdAt, severity])
+}
+
+
+model AssetHistory {
+  id             String       @id @default(uuid())
+  assetId        String
+  asset          Asset        @relation(fields: [assetId], references: [id], onDelete: Cascade)
+  status         AssetStatus
+  condition      Condition
+  locationId     String
+  location       Location     @relation(fields: [locationId], references: [id], onDelete: Restrict)
+  departmentId   String?
+  department     Department?  @relation(fields: [departmentId], references: [id], onDelete: Restrict)
+  changedById    String
+  changedBy      User         @relation("UserAssetHistories", fields: [changedById], references: [id], onDelete: Restrict)
+  notes          String?
+
+  // Multitenancy denormalization
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([assetId])
+  @@index([createdAt])
+  @@index([organizationId])
+}
+
+model ResourceBookingReminder {
+  id             String          @id @default(uuid())
+  bookingId      String
+  booking        ResourceBooking @relation(fields: [bookingId], references: [id], onDelete: Cascade)
+  reminderTime   DateTime
+  isSent         Boolean         @default(false)
+  sentAt         DateTime?
+
+  // Multitenancy denormalization
+  organizationId String
+  organization   Organization    @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  createdAt      DateTime        @default(now())
+  updatedAt      DateTime        @updatedAt
+
+  @@index([bookingId])
+  @@index([organizationId])
+}
+
+model MaintenanceAttachment {
+  id                   String             @id @default(uuid())
+  maintenanceRequestId String
+  maintenanceRequest   MaintenanceRequest @relation(fields: [maintenanceRequestId], references: [id], onDelete: Cascade)
+  name                 String
+  url                  String
+  fileType             String?
+
+  // Multitenancy denormalization
+  organizationId       String
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([maintenanceRequestId])
+  @@index([organizationId])
+}
+
+model MaintenanceWorkLog {
+  id                   String             @id @default(uuid())
+  maintenanceRequestId String
+  maintenanceRequest   MaintenanceRequest @relation(fields: [maintenanceRequestId], references: [id], onDelete: Cascade)
+  technicianId         String
+  technician           Employee           @relation(fields: [technicianId], references: [id], onDelete: Restrict)
+  status               MaintenanceStatus
+  notes                String?
+  laborHours           Decimal?           @db.Decimal(5, 2)
+
+  // Multitenancy denormalization
+  organizationId       String
+  organization         Organization       @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  createdAt            DateTime           @default(now())
+  updatedAt            DateTime           @updatedAt
+
+  @@index([maintenanceRequestId])
+  @@index([organizationId])
+}
+
+model EmailQueue {
+  id             String       @id @default(uuid())
+  recipient      String
+  subject        String
+  body           String
+  status         EmailStatus  @default(PENDING)
+  retryCount     Int          @default(0)
+  maxRetries     Int          @default(3)
+  lastError      String?
+  sentAt         DateTime?
+  
+  // Multitenancy denormalization
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  @@index([organizationId])
+}
+
+model NotificationPreference {
+  id             String           @id @default(uuid())
+  userId         String
+  user           User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  notificationType NotificationType
+  channelEmail   Boolean          @default(true)
+  channelPush    Boolean          @default(true)
+  channelInApp   Boolean          @default(true)
+
+  // Multitenancy denormalization
+  organizationId String
+  organization   Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  createdAt      DateTime         @default(now())
+  updatedAt      DateTime         @updatedAt
+
+  @@unique([userId, notificationType])
+  @@index([organizationId])
+}
+
+model AuditResultHistory {
+  id                 String           @id @default(uuid())
+  auditAssetResultId String
+  auditAssetResult   AuditAssetResult @relation(fields: [auditAssetResultId], references: [id], onDelete: Cascade)
+  oldStatus          AuditAssetStatus
+  newStatus          AuditAssetStatus
+  changedById        String
+  changedBy          User             @relation("UserAuditResultHistories", fields: [changedById], references: [id], onDelete: Restrict)
+  notes              String?
+
+  // Multitenancy denormalization
+  organizationId     String
+  organization       Organization     @relation(fields: [organizationId], references: [id], onDelete: Restrict)
+
+  createdAt          DateTime         @default(now())
+  updatedAt          DateTime         @updatedAt
+
+  @@index([auditAssetResultId])
+  @@index([organizationId])
 }
