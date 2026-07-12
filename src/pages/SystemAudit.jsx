@@ -1,318 +1,562 @@
-import React, { useState } from 'react';
-
-const auditTasks = [
-  {
-    id: 1,
-    icon: 'corporate_fare',
-    iconBg: 'bg-blue-100 text-blue-600',
-    borderColor: 'border-primary',
-    title: 'Regional DC - Silicon Valley North',
-    lead: 'Sarah M.',
-    due: 'Due Sept 28',
-    dueIcon: 'calendar_today',
-    status: 'In Progress',
-    statusBg: 'bg-blue-100 text-blue-700',
-    actionIcon: 'chevron_right',
-    actionClass: 'text-on-surface',
-  },
-  {
-    id: 2,
-    icon: 'devices',
-    iconBg: 'bg-yellow-100 text-yellow-700',
-    borderColor: 'border-yellow-500',
-    title: 'Executive Laptop Fleet Refresh',
-    lead: 'Mike T.',
-    due: 'Due Oct 05',
-    dueIcon: 'calendar_today',
-    status: 'Pending',
-    statusBg: 'bg-gray-100 text-gray-600',
-    actionIcon: 'chevron_right',
-    actionClass: 'text-on-surface',
-  },
-  {
-    id: 3,
-    icon: 'router',
-    iconBg: 'bg-gray-100 text-gray-600',
-    borderColor: 'border-green-500',
-    title: 'Network Infrastructure Hub B',
-    lead: 'David L.',
-    due: 'Finished Sept 15',
-    dueIcon: 'history',
-    status: 'Completed',
-    statusBg: 'bg-green-100 text-green-700',
-    actionIcon: 'check_circle',
-    actionClass: 'text-green-500',
-  },
-  {
-    id: 4,
-    icon: 'inventory',
-    iconBg: 'bg-gray-50 text-gray-400',
-    borderColor: 'border-gray-200',
-    title: 'Offsite Storage Archive - Phase 4',
-    lead: 'Unassigned',
-    due: 'Oct 20',
-    dueIcon: 'calendar_today',
-    status: 'Scheduled',
-    statusBg: 'bg-gray-100 text-gray-500',
-    actionIcon: 'more_vert',
-    actionClass: 'text-on-surface',
-    faded: true,
-  },
-];
-
-const discrepancies = [
-  {
-    id: 1,
-    urgency: 'URGENT',
-    urgencyBg: 'bg-red-100 text-red-600',
-    icon: 'warning',
-    iconBg: 'bg-red-100 text-red-600',
-    assetId: 'ASSET-2A · MBP-14 · 4',
-    title: 'M3 Max MacBook Pro (16-inch)',
-    countLabel1: 'EXPECTED',
-    count1: 42,
-    countLabel2: 'PHYSICAL',
-    count2: 39,
-    note: '*Inventory mismatch detected in South Wing Locker D4*',
-    borderColor: 'border-red-200',
-  },
-  {
-    id: 2,
-    urgency: 'MEDIUM',
-    urgencyBg: 'bg-blue-100 text-blue-600',
-    icon: 'info',
-    iconBg: 'bg-blue-100 text-blue-600',
-    assetId: 'ASSET-1B · 1401L · 12',
-    title: 'Cisco Nexus 9300 Switches',
-    countLabel1: 'EXPECTED',
-    count1: 15,
-    countLabel2: 'PHYSICAL',
-    count2: 13,
-    note: '*Process hardware identified in Storage Area A.*',
-    borderColor: 'border-blue-200',
-  },
-];
-
-const historyItems = [
-  { ref: '#A20-2024-991', date: 'Sept 12, 2024', site: 'Audit HQ - Floor 8', auditor: 'Janet Doe', avatarBg: 'bg-blue-200 text-blue-800', result: 'VERIFIED', resultBg: 'bg-green-100 text-green-700' },
-  { ref: '#A20-2024-003', date: 'Sept 05, 2024', site: 'London Edge', auditor: 'Marcus K.', avatarBg: 'bg-green-200 text-green-800', result: 'IRREGULAR', resultBg: 'bg-red-100 text-red-700' },
-  { ref: '#A20-2024-003', date: 'Aug 28, 2024', site: 'Tokyo Branch', auditor: 'Yi-Ki S.', avatarBg: 'bg-purple-200 text-purple-800', result: 'VERIFIED', resultBg: 'bg-green-100 text-green-700' },
-];
+import React, { useState, useContext } from 'react';
+import { AppContext } from '../context/AppContext';
 
 export default function SystemAudit() {
+  const {
+    audits,
+    assets,
+    departments,
+    addAuditCycle,
+    updateAuditCycle,
+    updateAsset,
+    addNotification
+  } = useContext(AppContext);
+
   const [activeTab, setActiveTab] = useState('tasks');
+  const [showNewModal, setShowNewModal] = useState(false);
+  const [selectedAudit, setSelectedAudit] = useState(null);
+  const [showChecklistModal, setShowChecklistModal] = useState(false);
+  const [selectedDiscrepancy, setSelectedDiscrepancy] = useState(null);
+  const [showReconcileModal, setShowReconcileModal] = useState(false);
+
+  // New Audit Cycle Form
+  const [newAuditForm, setNewAuditForm] = useState({
+    cycleName: '',
+    startDate: new Date().toISOString().split('T')[0],
+    endDate: '',
+    department: 'IT Infrastructure'
+  });
+
+  // Calculate stats
+  const activeAudits = audits.filter(a => a.status !== 'Completed');
+  const completedAudits = audits.filter(a => a.status === 'Completed');
+  
+  // Calculate health score: percentage of Excellent/Good assets
+  const totalAssets = assets.length;
+  const healthyAssets = assets.filter(a => a.condition === 'Excellent' || a.condition === 'Good').length;
+  const healthScore = totalAssets > 0 ? ((healthyAssets / totalAssets) * 100).toFixed(1) : '100.0';
+
+  // Gather discrepancies: verified assets with mismatching conditions or marked as Damaged/Poor
+  const getDiscrepancies = () => {
+    const list = [];
+    audits.forEach(audit => {
+      if (audit.status === 'Completed') return; // resolved
+      audit.items.forEach(item => {
+        const registeredAsset = assets.find(a => a.id === item.assetId);
+        if (item.verified) {
+          // Condition mismatch or bad condition
+          const hasMismatch = registeredAsset && registeredAsset.condition !== item.condition;
+          const isDamaged = item.condition === 'Damaged' || item.condition === 'Poor';
+          if (hasMismatch || isDamaged) {
+            list.push({
+              auditId: audit.id,
+              auditName: audit.cycleName,
+              assetId: item.assetId,
+              assetName: item.assetName,
+              expectedCondition: registeredAsset?.condition || 'Excellent',
+              actualCondition: item.condition,
+              remarks: item.remarks,
+              reason: hasMismatch ? 'Condition Mismatch' : 'Asset Damaged'
+            });
+          }
+        }
+      });
+    });
+    return list;
+  };
+
+  const discrepancies = getDiscrepancies();
+
+  const handleStartAuditSubmit = (e) => {
+    e.preventDefault();
+    if (!newAuditForm.cycleName) return;
+
+    // Auto populate checklist items with all assets belonging to selected department
+    const deptAssets = assets.filter(a => a.department === newAuditForm.department);
+    const auditItems = deptAssets.map(a => ({
+      assetId: a.id,
+      assetName: a.name,
+      verified: false,
+      condition: a.condition || 'Excellent',
+      remarks: ''
+    }));
+
+    addAuditCycle({
+      cycleName: newAuditForm.cycleName,
+      startDate: newAuditForm.startDate,
+      endDate: newAuditForm.endDate,
+      department: newAuditForm.department,
+      status: 'In Progress',
+      items: auditItems
+    });
+
+    addNotification({
+      title: "Audit Cycle Started",
+      message: `Audit cycle "${newAuditForm.cycleName}" initiated for ${newAuditForm.department}.`,
+      type: "success"
+    });
+
+    setShowNewModal(false);
+    setNewAuditForm({
+      cycleName: '',
+      startDate: new Date().toISOString().split('T')[0],
+      endDate: '',
+      department: departments[0]?.name || 'IT Infrastructure'
+    });
+  };
+
+  // Checklist updates
+  const handleChecklistChange = (assetId, field, value) => {
+    if (!selectedAudit) return;
+    const updatedItems = selectedAudit.items.map(item => 
+      item.assetId === assetId ? { ...item, [field]: value } : item
+    );
+    setSelectedAudit(prev => ({ ...prev, items: updatedItems }));
+  };
+
+  const handleSaveChecklist = () => {
+    if (!selectedAudit) return;
+    
+    // Check if all items are verified to auto-close or advance the audit status
+    const allVerified = selectedAudit.items.every(item => item.verified);
+    const nextStatus = allVerified ? 'Completed' : 'In Progress';
+    
+    const timelineEvent = allVerified 
+      ? { date: new Date().toISOString().split('T')[0], event: "Audit Completed & Signed Off" }
+      : { date: new Date().toISOString().split('T')[0], event: "Audit Checklist Updated" };
+
+    const updatedTimeline = [...(selectedAudit.timeline || []), timelineEvent];
+
+    updateAuditCycle(selectedAudit.id, {
+      items: selectedAudit.items,
+      status: nextStatus,
+      timeline: updatedTimeline
+    });
+
+    addNotification({
+      title: allVerified ? "Audit Completed" : "Audit Progress Saved",
+      message: allVerified 
+        ? `Audit cycle "${selectedAudit.cycleName}" has been signed off.` 
+        : `Checklist progress updated for "${selectedAudit.cycleName}".`,
+      type: "success"
+    });
+
+    setShowChecklistModal(false);
+    setSelectedAudit(null);
+  };
+
+  // Reconcile Discrepancy (Phase 7 - Resolve discrepancy)
+  const handleReconcileSubmit = (e) => {
+    e.preventDefault();
+    if (!selectedDiscrepancy) return;
+
+    // Update the registered asset's condition in context to match actual audited condition
+    updateAsset(selectedDiscrepancy.assetId, {
+      condition: selectedDiscrepancy.actualCondition,
+      lastAudit: new Date().toLocaleDateString('en-US', { month: 'short', day: '2-digit', year: 'numeric' })
+    });
+
+    // Remove or resolve discrepancy by updating audit checklist item remarks
+    const targetAudit = audits.find(a => a.id === selectedDiscrepancy.auditId);
+    if (targetAudit) {
+      const updatedItems = targetAudit.items.map(item => 
+        item.assetId === selectedDiscrepancy.assetId 
+          ? { ...item, remarks: `Reconciled: Condition updated to ${selectedDiscrepancy.actualCondition}.` }
+          : item
+      );
+      updateAuditCycle(selectedDiscrepancy.auditId, { items: updatedItems });
+    }
+
+    addNotification({
+      title: "Discrepancy Reconciled",
+      message: `Asset ${selectedDiscrepancy.assetId} configuration updated.`,
+      type: "success"
+    });
+
+    setShowReconcileModal(false);
+    setSelectedDiscrepancy(null);
+  };
 
   return (
-    <div className="p-8 max-w-screen-xl mx-auto w-full flex flex-col gap-8">
+    <div className="space-y-6 max-w-screen-2xl mx-auto w-full px-4 md:px-8 py-6">
       {/* Page Header */}
-      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6">
-        <div className="space-y-1">
-          <h2 className="text-3xl font-bold text-on-surface tracking-tight">System Audit</h2>
-          <p className="text-base text-on-surface-variant">Q3 2024 Inventory &amp; Compliance Lifecycle</p>
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+          <h2 className="text-3xl font-bold text-on-surface">System Audit</h2>
+          <p className="text-sm text-on-surface-variant mt-1">Conduct inventory compliance reviews, reconcile physical asset counts, and view log timelines.</p>
         </div>
-        <div className="flex items-center gap-3">
-          <button className="bg-surface-container-high text-on-surface text-sm font-semibold py-2.5 px-5 rounded-xl border border-outline-variant flex items-center gap-2 hover:bg-surface-container-highest transition-all active:scale-95">
-            <span className="material-symbols-outlined text-xl">file_download</span>
-            <span>Export Report</span>
-            <span className="material-symbols-outlined text-lg">expand_more</span>
-          </button>
-          <button className="bg-primary text-on-primary text-sm font-semibold py-2.5 px-6 rounded-xl flex items-center gap-2 shadow-lg shadow-primary/20 hover:opacity-90 transition-all active:scale-95">
-            <span className="material-symbols-outlined text-xl">add_task</span>
-            <span>Start New Audit</span>
-          </button>
-        </div>
+        <button 
+          onClick={() => setShowNewModal(true)}
+          className="flex items-center gap-2 px-5 py-2.5 bg-primary text-on-primary rounded-xl text-sm font-semibold shadow-lg shadow-primary/10 hover:opacity-90 active:scale-95 transition-all"
+        >
+          <span className="material-symbols-outlined text-[18px]">add_task</span>
+          Start New Audit
+        </button>
       </div>
 
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        {/* Health Score */}
-        <div className="md:col-span-2 bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-6 flex flex-col justify-between relative overflow-hidden group shadow-sm">
-          <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:scale-110 transition-transform duration-500">
-            <span className="material-symbols-outlined text-8xl text-primary">health_and_safety</span>
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-primary/10 flex items-center justify-center shrink-0 text-primary">
+            <span className="material-symbols-outlined text-[24px]">health_and_safety</span>
           </div>
-          <div className="z-10">
-            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Audit Health Score</span>
-            <h3 className="text-4xl font-bold text-primary mt-1">94.2%</h3>
-            <p className="text-sm text-on-surface-variant mt-2 flex items-center gap-1">
-              <span className="material-symbols-outlined text-sm text-green-500">trending_up</span>
-              <span className="font-semibold text-green-600">+2.4%</span> from last quarter
-            </p>
-          </div>
-          <div className="mt-8 flex gap-4 z-10">
-            <div className="flex-1 bg-surface-container-low p-3 rounded-xl border border-outline-variant/20">
-              <p className="text-[10px] font-bold text-on-surface-variant uppercase">Verified Assets</p>
-              <p className="text-lg font-bold text-on-surface">12,482</p>
-            </div>
-            <div className="flex-1 bg-surface-container-low p-3 rounded-xl border border-outline-variant/20">
-              <p className="text-[10px] font-bold text-on-surface-variant uppercase">Compliance Gap</p>
-              <p className="text-lg font-bold text-red-500">0.8%</p>
-            </div>
+          <div>
+            <p className="text-2xl font-bold text-on-surface">{healthScore}%</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">Asset Health Index</p>
           </div>
         </div>
 
-        {/* Progress Tracker */}
-        <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-6 flex flex-col justify-between shadow-sm">
-          <div>
-            <span className="text-xs font-bold text-on-surface-variant uppercase tracking-widest">Quarterly Progress</span>
-            <div className="mt-4 flex items-center justify-between">
-              <div className="relative w-24 h-24">
-                <svg className="w-full h-full transform -rotate-90">
-                  <circle className="text-outline-variant/20" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" strokeWidth="8"></circle>
-                  <circle className="text-primary" cx="48" cy="48" fill="transparent" r="40" stroke="currentColor" strokeDasharray="251.2" strokeDashoffset="62.8" strokeWidth="8"></circle>
-                </svg>
-                <div className="absolute inset-0 flex items-center justify-center">
-                  <span className="text-xl font-bold text-on-surface">75%</span>
-                </div>
-              </div>
-              <div className="text-right">
-                <p className="text-2xl font-bold text-on-surface">15/20</p>
-                <p className="text-xs text-on-surface-variant">Nodes Audited</p>
-              </div>
-            </div>
+        <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-amber-100 flex items-center justify-center shrink-0 text-amber-700">
+            <span className="material-symbols-outlined text-[24px]">pending_actions</span>
           </div>
-          <div className="mt-4 pt-4 border-t border-outline-variant/20 flex items-center justify-between">
-            <p className="text-xs text-on-surface-variant">Estimated finish: <span className="font-bold text-on-surface">Oct 12</span></p>
+          <div>
+            <p className="text-2xl font-bold text-on-surface">{activeAudits.length}</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">Active Audits</p>
           </div>
         </div>
 
-        {/* Pending Discrepancies */}
-        <div className="bg-blue-600 text-white rounded-2xl p-6 flex flex-col justify-between shadow-sm">
-          <div>
-            <span className="text-xs font-bold text-blue-200 uppercase tracking-widest">Pending Discrepancies</span>
-            <h3 className="text-4xl font-bold mt-2">08</h3>
-            <p className="text-sm mt-2 font-medium text-blue-100">Require immediate reconciliation</p>
+        <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-green-100 flex items-center justify-center shrink-0 text-green-700">
+            <span className="material-symbols-outlined text-[24px]">check_circle</span>
           </div>
-          <button className="mt-4 w-full bg-blue-800 hover:bg-blue-900 text-white py-2 px-4 rounded-xl text-sm font-semibold transition-colors active:scale-95">
-            Review Now
-          </button>
+          <div>
+            <p className="text-2xl font-bold text-on-surface">{completedAudits.length}</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">Completed Cycles</p>
+          </div>
+        </div>
+
+        <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-5 shadow-sm flex items-center gap-4">
+          <div className="w-12 h-12 rounded-2xl bg-red-100 flex items-center justify-center shrink-0 text-red-700">
+            <span className="material-symbols-outlined text-[24px]">warning</span>
+          </div>
+          <div>
+            <p className="text-2xl font-bold text-on-surface">{discrepancies.length}</p>
+            <p className="text-xs text-on-surface-variant mt-0.5">Discrepancy Alerts</p>
+          </div>
         </div>
       </div>
 
-      {/* Main Content */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        {/* Audit Tasks */}
-        <div className="lg:col-span-2 flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-on-surface">Active Audit Tasks</h3>
-            <div className="flex gap-2">
-              <button className="p-2 hover:bg-surface-container-high rounded-lg transition-colors">
-                <span className="material-symbols-outlined text-on-surface-variant">filter_list</span>
-              </button>
-              <button className="p-2 hover:bg-surface-container-high rounded-lg transition-colors">
-                <span className="material-symbols-outlined text-on-surface-variant">sort</span>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        {/* Left Part: Active Cycles */}
+        <div className="lg:col-span-2 space-y-4">
+          <h3 className="text-lg font-bold text-on-surface">Active Audit Cycles</h3>
+          
+          <div className="space-y-3.5">
+            {activeAudits.length === 0 ? (
+              <div className="p-8 text-center border-2 border-dashed border-outline-variant/30 rounded-2xl bg-white dark:bg-surface-container text-on-surface-variant font-medium">
+                No active audit cycles. Start one using the button above.
+              </div>
+            ) : (
+              activeAudits.map((audit) => {
+                const verifiedCount = audit.items.filter(i => i.verified).length;
+                const totalCount = audit.items.length;
+                const progressPct = totalCount > 0 ? Math.round((verifiedCount / totalCount) * 100) : 100;
+                
+                return (
+                  <div key={audit.id} className="bg-white dark:bg-surface-container border border-outline-variant/30 p-5 rounded-2xl shadow-sm flex items-center justify-between gap-4 hover:border-primary/50 transition-colors">
+                    <div className="space-y-1.5 flex-1">
+                      <div className="flex items-center gap-2.5">
+                        <span className="material-symbols-outlined text-primary">fact_check</span>
+                        <h4 className="font-bold text-on-surface text-sm sm:text-base">{audit.cycleName}</h4>
+                        <span className="bg-blue-100 text-blue-800 dark:bg-blue-950 dark:text-blue-200 text-[10px] px-2.5 py-0.5 rounded-full font-bold uppercase tracking-wider">{audit.status}</span>
+                      </div>
+                      
+                      <div className="text-xs text-on-surface-variant flex items-center gap-4">
+                        <span>Dept: <strong>{audit.department}</strong></span>
+                        <span>Due: <strong>{audit.endDate || 'No Date'}</strong></span>
+                      </div>
+
+                      {/* Progress Bar */}
+                      <div className="space-y-1 pt-1.5 max-w-sm">
+                        <div className="flex justify-between text-[10px] text-on-surface-variant font-bold">
+                          <span>{verifiedCount} of {totalCount} assets verified</span>
+                          <span>{progressPct}%</span>
+                        </div>
+                        <div className="w-full bg-surface-container rounded-full h-1.5 overflow-hidden">
+                          <div className="bg-primary h-1.5 rounded-full" style={{ width: `${progressPct}%` }}></div>
+                        </div>
+                      </div>
+                    </div>
+
+                    <button 
+                      onClick={() => { setSelectedAudit(audit); setShowChecklistModal(true); }}
+                      className="px-4 py-2 bg-primary text-on-primary rounded-xl text-xs font-semibold hover:opacity-90 active:scale-95 transition-all"
+                    >
+                      Audit Checklist
+                    </button>
+                  </div>
+                );
+              })
+            )}
+          </div>
+        </div>
+
+        {/* Right Part: Discrepancy Alerts */}
+        <div className="space-y-4">
+          <h3 className="text-lg font-bold text-on-surface">Discrepancy Alerts</h3>
+          <div className="space-y-3.5">
+            {discrepancies.length === 0 ? (
+              <div className="p-6 text-center border border-outline-variant/30 rounded-2xl bg-white dark:bg-surface-container text-on-surface-variant text-xs italic">
+                No discrepancies found in active audits.
+              </div>
+            ) : (
+              discrepancies.map((disc, idx) => (
+                <div key={idx} className="bg-white dark:bg-surface-container p-4.5 rounded-2xl border border-red-200 dark:border-red-900/50 shadow-sm relative overflow-hidden group">
+                  <div className="flex justify-between items-start mb-2.5">
+                    <span className="text-[10px] font-extrabold px-2 py-0.5 bg-red-100 text-red-800 dark:bg-red-950 dark:text-red-200 rounded-full uppercase tracking-wider">{disc.reason}</span>
+                    <span className="font-mono text-[10px] font-bold text-on-surface-variant">{disc.assetId}</span>
+                  </div>
+
+                  <h4 className="font-bold text-sm text-on-surface">{disc.assetName}</h4>
+                  
+                  <div className="grid grid-cols-2 gap-4 mt-3 bg-surface-container-low dark:bg-surface-container p-2.5 rounded-xl border border-outline-variant/20 text-xs">
+                    <div>
+                      <p className="text-[9px] font-bold text-on-surface-variant uppercase">Expected</p>
+                      <p className="font-semibold text-on-surface">{disc.expectedCondition}</p>
+                    </div>
+                    <div>
+                      <p className="text-[9px] font-bold text-on-surface-variant uppercase text-red-500">Audited</p>
+                      <p className="font-bold text-red-600">{disc.actualCondition}</p>
+                    </div>
+                  </div>
+
+                  {disc.remarks && <p className="text-xs text-on-surface-variant mt-2.5 italic">"{disc.remarks}"</p>}
+
+                  <button 
+                    onClick={() => { setSelectedDiscrepancy(disc); setShowReconcileModal(true); }}
+                    className="w-full mt-3 bg-red-50 hover:bg-red-100 dark:bg-red-950/20 dark:hover:bg-red-950/40 text-red-600 text-xs font-bold py-2 rounded-xl border border-red-200 dark:border-red-900/50 transition-colors"
+                  >
+                    Resolve Discrepancy
+                  </button>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* START NEW AUDIT MODAL */}
+      {showNewModal && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowNewModal(false)}>
+          <div className="bg-white dark:bg-surface-container-high rounded-2xl shadow-2xl w-full max-w-md p-6 animate-scaleUp" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-6 border-b border-outline-variant/30 pb-3">
+              <h3 className="font-bold text-on-surface text-xl">Create Audit Cycle</h3>
+              <button onClick={() => setShowNewModal(false)} className="p-1.5 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-on-surface">
+                <span className="material-symbols-outlined">close</span>
               </button>
             </div>
-          </div>
 
-          <div className="space-y-3">
-            {auditTasks.map((task) => (
-              <div
-                key={task.id}
-                className={`bg-white dark:bg-surface-container border border-outline-variant/20 shadow-sm p-4 rounded-xl flex items-center gap-4 hover:shadow-md transition-all border-l-4 ${task.borderColor} ${task.faded ? 'opacity-75' : ''}`}
-              >
-                <div className={`w-12 h-12 ${task.iconBg} rounded-xl flex items-center justify-center shrink-0`}>
-                  <span className="material-symbols-outlined">{task.icon}</span>
+            <form onSubmit={handleStartAuditSubmit} className="space-y-4">
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1.5">Audit Cycle Name *</label>
+                <input 
+                  type="text" 
+                  required
+                  placeholder="e.g. Q3 2026 IT Equipment Review"
+                  className="w-full bg-surface-container-low dark:bg-surface-container border border-outline-variant rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none text-on-surface"
+                  value={newAuditForm.cycleName}
+                  onChange={e => setNewAuditForm(prev => ({ ...prev, cycleName: e.target.value }))}
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1.5">Start Date *</label>
+                  <input 
+                    type="date" 
+                    required
+                    className="w-full bg-surface-container-low dark:bg-surface-container border border-outline-variant rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none text-on-surface"
+                    value={newAuditForm.startDate}
+                    onChange={e => setNewAuditForm(prev => ({ ...prev, startDate: e.target.value }))}
+                  />
                 </div>
-                <div className="flex-grow min-w-0">
-                  <div className="flex items-center justify-between gap-2">
-                    <h4 className={`font-bold truncate ${task.faded ? 'text-on-surface-variant' : 'text-on-surface'}`}>{task.title}</h4>
-                    <span className={`px-3 py-1 ${task.statusBg} text-[10px] font-extrabold rounded-full uppercase shrink-0`}>{task.status}</span>
-                  </div>
-                  <div className="flex items-center gap-4 mt-1 text-xs text-on-surface-variant">
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">person</span>
-                      Lead: {task.lead}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <span className="material-symbols-outlined text-[14px]">{task.dueIcon}</span>
-                      {task.due}
-                    </span>
-                  </div>
+                <div>
+                  <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1.5">End Date *</label>
+                  <input 
+                    type="date" 
+                    required
+                    className="w-full bg-surface-container-low dark:bg-surface-container border border-outline-variant rounded-xl px-4 py-2 text-sm focus:ring-2 focus:ring-primary/20 outline-none text-on-surface"
+                    value={newAuditForm.endDate}
+                    onChange={e => setNewAuditForm(prev => ({ ...prev, endDate: e.target.value }))}
+                  />
                 </div>
-                <button className={`p-2 hover:bg-surface-container-highest rounded-full transition-colors shrink-0 ${task.actionClass}`}>
-                  <span className="material-symbols-outlined">{task.actionIcon}</span>
+              </div>
+
+              <div>
+                <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1.5">Select Department Scope *</label>
+                <select 
+                  className="w-full bg-surface-container-low dark:bg-surface-container border border-outline-variant rounded-xl px-4 py-2.5 text-sm focus:ring-2 focus:ring-primary/20 outline-none text-on-surface"
+                  value={newAuditForm.department}
+                  onChange={e => setNewAuditForm(prev => ({ ...prev, department: e.target.value }))}
+                  required
+                >
+                  {departments.map(d => (
+                    <option key={d.id} value={d.name}>{d.name}</option>
+                  ))}
+                </select>
+              </div>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/30 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setShowNewModal(false)}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:opacity-90 active:scale-95 transition-all shadow-md shadow-primary/10"
+                >
+                  Create Cycle
                 </button>
               </div>
-            ))}
+            </form>
           </div>
         </div>
+      )}
 
-        {/* Discrepancy Cards */}
-        <div className="flex flex-col gap-4">
-          <div className="flex items-center justify-between">
-            <h3 className="text-xl font-bold text-on-surface">Discrepancies</h3>
-            <a className="text-xs font-bold text-primary hover:underline uppercase tracking-wider" href="#">View All</a>
-          </div>
-          <div className="flex flex-col gap-4">
-            {discrepancies.map((disc) => (
-              <div key={disc.id} className={`bg-white dark:bg-surface-container p-5 rounded-2xl relative overflow-hidden group border ${disc.borderColor} shadow-sm`}>
-                <div className="flex items-start justify-between mb-4">
-                  <div className={`p-2 ${disc.iconBg} rounded-lg`}>
-                    <span className="material-symbols-outlined">{disc.icon}</span>
-                  </div>
-                  <span className={`text-[10px] font-extrabold px-2 py-0.5 rounded-full ${disc.urgencyBg}`}>{disc.urgency}</span>
-                </div>
-                <p className="text-[10px] text-on-surface-variant font-semibold uppercase tracking-wider">{disc.assetId}</p>
-                <h4 className="font-bold text-on-surface mt-1">{disc.title}</h4>
-                <div className="mt-3 flex gap-6">
-                  <div>
-                    <p className="text-[10px] text-on-surface-variant font-bold uppercase">{disc.countLabel1}</p>
-                    <p className="text-xl font-bold text-on-surface">{disc.count1}</p>
-                  </div>
-                  <div>
-                    <p className="text-[10px] text-on-surface-variant font-bold uppercase">{disc.countLabel2}</p>
-                    <p className="text-xl font-bold text-red-500">{disc.count2}</p>
-                  </div>
-                </div>
-                <p className="text-xs text-on-surface-variant mt-3 italic">{disc.note}</p>
+      {/* VERIFICATION CHECKLIST MODAL */}
+      {showChecklistModal && selectedAudit && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setShowChecklistModal(false)}>
+          <div className="bg-white dark:bg-surface-container-high rounded-2xl shadow-2xl w-full max-w-2xl p-6 max-h-[90vh] overflow-y-auto animate-scaleUp" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4 border-b border-outline-variant/30 pb-3">
+              <div>
+                <h3 className="font-bold text-on-surface text-lg">{selectedAudit.cycleName}</h3>
+                <p className="text-xs text-on-surface-variant mt-0.5">Department: {selectedAudit.department}</p>
               </div>
-            ))}
+              <button onClick={() => setShowChecklistModal(false)} className="p-1.5 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-on-surface">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <div className="space-y-4 my-4">
+              {selectedAudit.items.length === 0 ? (
+                <p className="text-sm text-on-surface-variant italic text-center py-6">No assets registered in this department currently.</p>
+              ) : (
+                <div className="space-y-3.5">
+                  {selectedAudit.items.map((item) => (
+                    <div key={item.assetId} className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 p-4 rounded-xl border border-outline-variant/20 bg-surface-container-low dark:bg-surface-container">
+                      <div className="flex-1 space-y-1">
+                        <p className="font-bold text-on-surface text-sm">{item.assetName}</p>
+                        <p className="text-[10px] text-on-surface-variant font-mono">{item.assetId}</p>
+                      </div>
+
+                      <div className="flex flex-wrap items-center gap-3 w-full sm:w-auto">
+                        {/* Verified toggle */}
+                        <label className="flex items-center gap-2 cursor-pointer select-none text-xs font-semibold text-on-surface">
+                          <input 
+                            type="checkbox" 
+                            checked={item.verified}
+                            onChange={e => handleChecklistChange(item.assetId, 'verified', e.target.checked)}
+                            className="rounded border-outline-variant text-primary w-4 h-4 cursor-pointer"
+                          />
+                          <span>Verified</span>
+                        </label>
+
+                        {/* Condition selector */}
+                        <select 
+                          className="px-2 py-1.5 border border-outline-variant rounded-lg text-xs bg-white dark:bg-surface-container-high text-on-surface outline-none cursor-pointer"
+                          value={item.condition}
+                          onChange={e => handleChecklistChange(item.assetId, 'condition', e.target.value)}
+                        >
+                          <option value="Excellent">Excellent</option>
+                          <option value="Good">Good</option>
+                          <option value="Fair">Fair</option>
+                          <option value="Poor">Poor</option>
+                          <option value="Damaged">Damaged</option>
+                        </select>
+
+                        {/* Remarks */}
+                        <input 
+                          type="text" 
+                          placeholder="Audit remarks..."
+                          className="flex-1 sm:flex-none px-3 py-1.5 border border-outline-variant rounded-lg text-xs bg-white dark:bg-surface-container-high text-on-surface outline-none"
+                          value={item.remarks || ''}
+                          onChange={e => handleChecklistChange(item.assetId, 'remarks', e.target.value)}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/30 mt-6">
+              <button 
+                type="button" 
+                onClick={() => setShowChecklistModal(false)}
+                className="px-5 py-2.5 rounded-xl text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-all"
+              >
+                Cancel
+              </button>
+              <button 
+                type="button"
+                onClick={handleSaveChecklist}
+                className="px-6 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:opacity-90 active:scale-95 transition-all shadow-md shadow-primary/10"
+              >
+                Save Progress
+              </button>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {/* Reconciliation History */}
-      <div className="bg-white dark:bg-surface-container border border-outline-variant/30 rounded-2xl p-6 shadow-sm">
-        <div className="flex items-center justify-between mb-6">
-          <h3 className="text-xl font-bold text-on-surface">Audit Reconciliation History</h3>
-          <a className="text-xs font-bold text-primary hover:underline uppercase tracking-wider" href="#">Full History ↓</a>
+      {/* DISCREPANCY RECONCILIATION DIALOG */}
+      {showReconcileModal && selectedDiscrepancy && (
+        <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4" onClick={() => setSelectedDiscrepancy(null)}>
+          <div className="bg-white dark:bg-surface-container-high rounded-2xl shadow-2xl w-full max-w-md p-6 animate-scaleUp" onClick={e => e.stopPropagation()}>
+            <div className="flex items-center justify-between mb-4 border-b border-outline-variant/30 pb-3">
+              <h3 className="font-bold text-on-surface text-lg">Reconcile Asset Discrepancy</h3>
+              <button onClick={() => setSelectedDiscrepancy(null)} className="p-1.5 hover:bg-surface-container rounded-lg text-on-surface-variant hover:text-on-surface">
+                <span className="material-symbols-outlined">close</span>
+              </button>
+            </div>
+
+            <p className="text-sm text-on-surface-variant mb-4">
+              You are resolving a condition discrepancy flagged during the <strong>{selectedDiscrepancy.auditName}</strong> cycle.
+            </p>
+
+            <div className="bg-surface-container-low dark:bg-surface-container p-4 rounded-xl border border-outline-variant/20 text-xs space-y-2 text-on-surface-variant mb-5">
+              <p>Asset ID: <strong className="text-on-surface font-mono">{selectedDiscrepancy.assetId}</strong></p>
+              <p>Asset Name: <strong className="text-on-surface">{selectedDiscrepancy.assetName}</strong></p>
+              <div className="flex gap-4 pt-1.5">
+                <div>
+                  <p className="text-[10px] font-bold text-on-surface-variant uppercase">Expected Condition</p>
+                  <p className="font-semibold text-on-surface text-sm">{selectedDiscrepancy.expectedCondition}</p>
+                </div>
+                <div>
+                  <p className="text-[10px] font-bold text-red-500 uppercase">Audited Condition</p>
+                  <p className="font-bold text-red-600 text-sm">{selectedDiscrepancy.actualCondition}</p>
+                </div>
+              </div>
+            </div>
+
+            <form onSubmit={handleReconcileSubmit} className="space-y-4">
+              <p className="text-xs font-semibold text-on-surface">
+                Clicking Confirm will update the primary asset record's condition to <strong>{selectedDiscrepancy.actualCondition}</strong> and sign off the discrepancy.
+              </p>
+
+              <div className="flex justify-end gap-3 pt-4 border-t border-outline-variant/30 mt-6">
+                <button 
+                  type="button" 
+                  onClick={() => setSelectedDiscrepancy(null)}
+                  className="px-5 py-2.5 rounded-xl text-sm font-semibold text-on-surface-variant hover:bg-surface-container transition-all"
+                >
+                  Cancel
+                </button>
+                <button 
+                  type="submit"
+                  className="px-6 py-2.5 rounded-xl bg-primary text-on-primary text-sm font-semibold hover:opacity-90 active:scale-95 transition-all shadow-md shadow-primary/10"
+                >
+                  Confirm Reconciliation
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="border-b border-outline-variant/30">
-                <th className="text-left pb-3 font-bold text-on-surface-variant text-xs uppercase tracking-wider">Reference</th>
-                <th className="text-left pb-3 font-bold text-on-surface-variant text-xs uppercase tracking-wider">Date</th>
-                <th className="text-left pb-3 font-bold text-on-surface-variant text-xs uppercase tracking-wider">Site</th>
-                <th className="text-left pb-3 font-bold text-on-surface-variant text-xs uppercase tracking-wider">Auditor</th>
-                <th className="text-left pb-3 font-bold text-on-surface-variant text-xs uppercase tracking-wider">Result</th>
-              </tr>
-            </thead>
-            <tbody>
-              {historyItems.map((item, idx) => (
-                <tr key={idx} className="border-b border-outline-variant/10 hover:bg-surface-container-low transition-colors">
-                  <td className="py-3">
-                    <a href="#" className="text-primary font-semibold hover:underline">{item.ref}</a>
-                  </td>
-                  <td className="py-3 text-on-surface-variant">{item.date}</td>
-                  <td className="py-3 text-on-surface">{item.site}</td>
-                  <td className="py-3">
-                    <div className="flex items-center gap-2">
-                      <div className={`w-6 h-6 rounded-full flex items-center justify-center text-[10px] font-bold ${item.avatarBg}`}>
-                        {item.auditor.split(' ').map(n => n[0]).join('')}
-                      </div>
-                      <span className="text-on-surface">{item.auditor}</span>
-                    </div>
-                  </td>
-                  <td className="py-3">
-                    <span className={`px-3 py-1 rounded-full text-[10px] font-extrabold uppercase ${item.resultBg}`}>{item.result}</span>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      </div>
+      )}
     </div>
   );
 }
