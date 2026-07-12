@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Login | AssetFlow Enterprise RMS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "on-tertiary-container": "#ffede6",
+                    "background": "#faf8ff",
+                    "tertiary-fixed": "#ffdbcd",
+                    "on-tertiary-fixed": "#360f00",
+                    "tertiary": "#943700",
+                    "tertiary-fixed-dim": "#ffb596",
+                    "surface-container-highest": "#e1e2ed",
+                    "primary-fixed": "#dbe1ff",
+                    "on-surface": "#191b23",
+                    "primary-container": "#2563eb",
+                    "tertiary-container": "#bc4800",
+                    "secondary-fixed-dim": "#b7c8e1",
+                    "surface-variant": "#e1e2ed",
+                    "surface-container-high": "#e7e7f3",
+                    "primary-fixed-dim": "#b4c5ff",
+                    "surface-container": "#ededf9",
+                    "on-primary": "#ffffff",
+                    "on-background": "#191b23",
+                    "secondary": "#505f76",
+                    "on-error": "#ffffff",
+                    "error-container": "#ffdad6",
+                    "on-primary-fixed-variant": "#003ea8",
+                    "secondary-fixed": "#d3e4fe",
+                    "on-primary-container": "#eeefff",
+                    "inverse-primary": "#b4c5ff",
+                    "on-secondary-container": "#54647a",
+                    "primary": "#004ac6",
+                    "on-tertiary-fixed-variant": "#7d2d00",
+                    "on-surface-variant": "#434655",
+                    "on-error-container": "#93000a",
+                    "outline-variant": "#c3c6d7",
+                    "on-secondary": "#ffffff",
+                    "on-secondary-fixed-variant": "#38485d",
+                    "surface-container-lowest": "#ffffff",
+                    "inverse-surface": "#2e3039",
+                    "surface-container-low": "#f3f3fe",
+                    "outline": "#737686",
+                    "error": "#ba1a1a",
+                    "inverse-on-surface": "#f0f0fb",
+                    "secondary-container": "#d0e1fb",
+                    "surface-dim": "#d9d9e5",
+                    "on-secondary-fixed": "#0b1c30",
+                    "surface": "#faf8ff",
+                    "on-tertiary": "#ffffff",
+                    "surface-tint": "#0053db",
+                    "on-primary-fixed": "#00174b",
+                    "surface-bright": "#faf8ff"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px",
+                    "enterprise": "16px"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "stack-gap": "16px",
+                    "sidebar-width": "280px",
+                    "container-max": "1440px",
+                    "sidebar-collapsed": "80px",
+                    "margin-desktop": "32px",
+                    "margin-mobile": "16px"
+            },
+            "fontFamily": {
+                    "headline-md": ["Inter"],
+                    "body-md": ["Inter"],
+                    "display": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "sidebar-item": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "label-caps": ["Inter"],
+                    "headline-lg": ["Inter"]
+            },
+            "fontSize": {
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                    "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                    "sidebar-item": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                    "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                    "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+            }
+          },
+        },
+      }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #faf8ff;
+        }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+        }
+        .floating-blob {
+            position: absolute;
+            filter: blur(80px);
+            z-index: -1;
+            opacity: 0.4;
+            animation: float 20s infinite alternate ease-in-out;
+        }
+        @keyframes float {
+            0% { transform: translate(0, 0) scale(1); }
+            100% { transform: translate(40px, -60px) scale(1.1); }
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 md:p-8">
+<!-- Ambient Background Decorations -->
+<div class="floating-blob w-96 h-96 bg-primary-container top-[-10%] left-[-10%] rounded-full"></div>
+<div class="floating-blob w-[500px] h-[500px] bg-secondary-container bottom-[-15%] right-[-10%] rounded-full" style="animation-delay: -5s;"></div>
+<main class="w-full max-w-[1200px] bg-surface-container-lowest rounded-enterprise shadow-2xl overflow-hidden flex flex-col md:flex-row min-h-[720px]">
+<!-- Illustration Side -->
+<div class="hidden md:flex md:w-1/2 relative bg-primary overflow-hidden p-12 flex-col justify-between">
+<!-- Background Image with Overlay -->
+<div class="absolute inset-0 z-0">
+<div class="absolute inset-0 bg-gradient-to-br from-primary via-primary/80 to-primary-container mix-blend-multiply"></div>
+<div class="w-full h-full" data-alt="A sophisticated, 3D isometric representation of high-tech server racks and glowing data nodes floating in a digital space. The scene is rendered in deep corporate blues and vibrant cyan light accents, mirroring a premium enterprise SaaS environment. Sharp architectural lines and soft ambient glows create a sense of professional reliability and technological advancement. The perspective is dynamic, looking slightly upwards to convey scale and power." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAi5sN_uAr_eWeX_sUdSezNbgD6UP2-NQMriyGRBPj8bxQys80WD0Iimvi8AQWQQ_NvUC9X-lrToorcCZonGtGb8uH_CozVBO0KO4s3G2VMA83CgoIzBbpLjQT38AmVBty4eNLSj8udpTepDfmkAoKYpK5L92IpyQYAcZiq0hIy4aV5c0wYGQ1CIX5Mz6U29-2jX6ytLCRRa0BQ9YSTdXMKLj697Yy80_be8JX1MgJXl-wkDkGnX3PkqpGzdBEVNceAOHTeNPPwJQ1j')"></div>
+</div>
+<div class="relative z-10">
+<div class="flex items-center gap-3">
+<div class="w-10 h-10 bg-white rounded-lg flex items-center justify-center shadow-lg">
+<span class="material-symbols-outlined text-primary text-2xl font-bold">account_balance_wallet</span>
+</div>
+<span class="font-headline-md text-headline-md text-white tracking-tight">AssetFlow</span>
+</div>
+</div>
+<div class="relative z-10 max-w-sm">
+<h1 class="font-headline-lg text-headline-lg text-white mb-4">Precision Asset Management for Global Teams.</h1>
+<p class="font-body-lg text-body-lg text-primary-fixed-dim/90">Centralize your hardware, software, and physical assets with enterprise-grade security and real-time auditing.</p>
+<div class="mt-12 flex flex-col gap-6">
+<div class="flex items-center gap-4 text-white/80">
+<span class="material-symbols-outlined text-white">verified_user</span>
+<span class="font-body-md text-body-md">SOC2 Type II Certified infrastructure</span>
+</div>
+<div class="flex items-center gap-4 text-white/80">
+<span class="material-symbols-outlined text-white">speed</span>
+<span class="font-body-md text-body-md">99.99% Uptime SLA for enterprise tier</span>
+</div>
+</div>
+</div>
+<div class="relative z-10 flex items-center gap-4 text-primary-fixed-dim font-body-md">
+<span class="font-semibold">Trusted by over 500+ global enterprises</span>
+</div>
+</div>
+<!-- Login Form Side -->
+<div class="w-full md:w-1/2 p-8 md:p-16 flex flex-col">
+<!-- Top Actions -->
+<div class="flex justify-between items-center mb-12">
+<div class="md:hidden flex items-center gap-2">
+<span class="material-symbols-outlined text-primary text-3xl font-bold">account_balance_wallet</span>
+<span class="font-headline-md text-headline-md text-on-surface">AssetFlow</span>
+</div>
+<div class="relative group ml-auto">
+<button class="flex items-center gap-2 px-3 py-1.5 rounded-lg hover:bg-surface-container transition-colors text-on-surface-variant" id="langSwitcher">
+<span class="material-symbols-outlined text-[20px]">language</span>
+<span class="font-body-md text-body-md">English (US)</span>
+<span class="material-symbols-outlined text-[18px]">expand_more</span>
+</button>
+<!-- Language Dropdown (Hidden) -->
+<div class="absolute right-0 top-full mt-2 w-48 bg-surface-container-lowest shadow-xl rounded-xl border border-outline-variant opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-50">
+<a class="block px-4 py-3 font-body-md text-body-md hover:bg-surface-container text-on-surface" href="#">English (US)</a>
+<a class="block px-4 py-3 font-body-md text-body-md hover:bg-surface-container text-on-surface" href="#">Deutsch</a>
+<a class="block px-4 py-3 font-body-md text-body-md hover:bg-surface-container text-on-surface" href="#">Français</a>
+<a class="block px-4 py-3 font-body-md text-body-md hover:bg-surface-container text-on-surface" href="#">日本語</a>
+</div>
+</div>
+</div>
+<div class="flex-1 flex flex-col justify-center">
+<div class="mb-8">
+<h2 class="font-headline-lg text-headline-lg text-on-surface mb-2">Welcome back</h2>
+<p class="font-body-lg text-body-lg text-on-surface-variant">Access your dashboard and manage assets.</p>
+</div>
+<!-- Social Logins -->
+<div class="grid grid-cols-2 gap-4 mb-8">
+<button class="flex items-center justify-center gap-3 px-4 py-3 rounded-enterprise border border-outline-variant hover:bg-surface-container-low transition-all font-body-md text-body-md text-on-surface shadow-sm active:scale-95">
+<svg class="w-5 h-5" viewbox="0 0 24 24">
+<path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z" fill="#4285F4"></path>
+<path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"></path>
+<path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z" fill="#FBBC05"></path>
+<path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 12-4.53z" fill="#EA4335"></path>
+</svg>
+                        Google
+                    </button>
+<button class="flex items-center justify-center gap-3 px-4 py-3 rounded-enterprise border border-outline-variant hover:bg-surface-container-low transition-all font-body-md text-body-md text-on-surface shadow-sm active:scale-95">
+<svg class="w-5 h-5" viewbox="0 0 23 23">
+<path d="M1 1h10v10H1z" fill="#f35325"></path><path d="M12 1h10v10H12z" fill="#81bc06"></path><path d="M1 12h10v10H1z" fill="#05a6f0"></path><path d="M12 12h10v10H12z" fill="#ffba08"></path>
+</svg>
+                        Microsoft
+                    </button>
+</div>
+<div class="relative mb-8">
+<div class="absolute inset-0 flex items-center">
+<div class="w-full border-t border-outline-variant"></div>
+</div>
+<div class="relative flex justify-center text-xs uppercase">
+<span class="bg-surface-container-lowest px-4 text-on-surface-variant font-label-caps">Or continue with email</span>
+</div>
+</div>
+<!-- Credentials Form -->
+<form class="space-y-6">
+<div>
+<label class="block font-label-caps text-on-surface-variant mb-2" for="email">Work Email</label>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">mail</span>
+<input class="w-full pl-12 pr-4 py-3 rounded-enterprise border border-outline-variant bg-surface-container-low focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none font-body-md" id="email" placeholder="name@company.com" type="email"/>
+</div>
+</div>
+<div>
+<div class="flex justify-between items-center mb-2">
+<label class="block font-label-caps text-on-surface-variant" for="password">Password</label>
+<a class="font-body-md text-primary hover:underline text-[13px]" href="#">Forgot password?</a>
+</div>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-4 top-1/2 -translate-y-1/2 text-on-surface-variant">lock</span>
+<input class="w-full pl-12 pr-12 py-3 rounded-enterprise border border-outline-variant bg-surface-container-low focus:bg-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none font-body-md" id="password" placeholder="••••••••" type="password"/>
+<button class="absolute right-4 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-on-surface" type="button">
+<span class="material-symbols-outlined text-[20px]">visibility</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<input class="w-5 h-5 rounded border-outline-variant text-primary focus:ring-primary/20" id="remember" type="checkbox"/>
+<label class="font-body-md text-on-surface-variant cursor-pointer select-none" for="remember">Remember me for 30 days</label>
+</div>
+<button class="w-full bg-primary text-on-primary py-4 rounded-enterprise font-sidebar-item text-sidebar-item shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all active:scale-[0.98] mt-4" type="submit">
+                        Sign In to AssetFlow
+                    </button>
+</form>
+</div>
+<div class="mt-12 text-center">
+<p class="font-body-md text-body-md text-on-surface-variant">
+                    Don't have an enterprise account? 
+                    <a class="text-primary font-bold hover:underline ml-1" href="#">Contact Sales</a> or 
+                    <a class="text-primary font-bold hover:underline ml-1" href="#">Start Free Trial</a>
+</p>
+</div>
+<!-- Footer Small Print -->
+<div class="mt-auto pt-8 flex flex-wrap justify-center gap-6">
+<a class="font-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="font-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="font-label-caps text-on-surface-variant hover:text-primary transition-colors" href="#">Security</a>
+</div>
+</div>
+</main>
+<script>
+        // Micro-interactions and simple state management
+        document.addEventListener('DOMContentLoaded', () => {
+            const loginForm = document.querySelector('form');
+            const passwordToggle = document.querySelector('button[type="button"]');
+            const passwordInput = document.querySelector('#password');
+            const visibilityIcon = passwordToggle.querySelector('span');
+
+            // Password visibility toggle
+            passwordToggle.addEventListener('click', () => {
+                const isPassword = passwordInput.type === 'password';
+                passwordInput.type = isPassword ? 'text' : 'password';
+                visibilityIcon.textContent = isPassword ? 'visibility_off' : 'visibility';
+            });
+
+            // Subtle form submission animation placeholder
+            loginForm.addEventListener('submit', (e) => {
+                e.preventDefault();
+                const btn = loginForm.querySelector('button[type="submit"]');
+                const originalText = btn.innerHTML;
+                
+                btn.disabled = true;
+                btn.innerHTML = `
+                    <div class="flex items-center justify-center gap-2">
+                        <svg class="animate-spin h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                            <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                            <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                        </svg>
+                        Authenticating...
+                    </div>
+                `;
+
+                // Fake delay to show premium feel
+                setTimeout(() => {
+                    // In a real app, this would handle actual auth
+                    btn.innerHTML = originalText;
+                    btn.disabled = false;
+                }, 1500);
+            });
+        });
+    </script>
+</body></html>

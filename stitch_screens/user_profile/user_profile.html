@@ -1,0 +1,454 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>User Profile | AssetFlow</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "on-tertiary-container": "#ffede6",
+                        "inverse-surface": "#2e3039",
+                        "primary-container": "#2563eb",
+                        "on-tertiary-fixed": "#360f00",
+                        "on-primary": "#ffffff",
+                        "inverse-primary": "#b4c5ff",
+                        "background": "#faf8ff",
+                        "secondary-container": "#d0e1fb",
+                        "on-secondary-container": "#54647a",
+                        "surface-bright": "#faf8ff",
+                        "surface-tint": "#0053db",
+                        "surface-container-high": "#e7e7f3",
+                        "secondary": "#505f76",
+                        "tertiary-fixed-dim": "#ffb596",
+                        "on-tertiary-fixed-variant": "#7d2d00",
+                        "on-error": "#ffffff",
+                        "inverse-on-surface": "#f0f0fb",
+                        "secondary-fixed": "#d3e4fe",
+                        "on-primary-fixed": "#00174b",
+                        "on-background": "#191b23",
+                        "surface-container-low": "#f3f3fe",
+                        "on-tertiary": "#ffffff",
+                        "on-primary-fixed-variant": "#003ea8",
+                        "primary": "#004ac6",
+                        "on-surface-variant": "#434655",
+                        "on-primary-container": "#eeefff",
+                        "primary-fixed-dim": "#b4c5ff",
+                        "on-error-container": "#93000a",
+                        "error": "#ba1a1a",
+                        "surface-dim": "#d9d9e5",
+                        "primary-fixed": "#dbe1ff",
+                        "on-surface": "#191b23",
+                        "tertiary-container": "#bc4800",
+                        "secondary-fixed-dim": "#b7c8e1",
+                        "on-secondary-fixed": "#0b1c30",
+                        "surface-container": "#ededf9",
+                        "surface-variant": "#e1e2ed",
+                        "on-secondary-fixed-variant": "#38485d",
+                        "tertiary": "#943700",
+                        "outline-variant": "#c3c6d7",
+                        "error-container": "#ffdad6",
+                        "surface-container-highest": "#e1e2ed",
+                        "surface": "#faf8ff",
+                        "outline": "#737686",
+                        "on-secondary": "#ffffff",
+                        "tertiary-fixed": "#ffdbcd",
+                        "surface-container-lowest": "#ffffff"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "sidebar-width": "280px",
+                        "gutter": "24px",
+                        "container-max": "1440px",
+                        "margin-desktop": "32px",
+                        "stack-gap": "16px",
+                        "sidebar-collapsed": "80px",
+                        "margin-mobile": "16px"
+                    },
+                    "fontFamily": {
+                        "sidebar-item": ["Inter"],
+                        "label-caps": ["Inter"],
+                        "body-md": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "display": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"]
+                    },
+                    "fontSize": {
+                        "sidebar-item": ["14px", {"lineHeight": "20px", "fontWeight": "600"}],
+                        "label-caps": ["12px", {"lineHeight": "16px", "letterSpacing": "0.05em", "fontWeight": "600"}],
+                        "body-md": ["14px", {"lineHeight": "20px", "fontWeight": "500"}],
+                        "headline-lg-mobile": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "display": ["48px", {"lineHeight": "1.1", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                        "body-lg": ["16px", {"lineHeight": "24px", "fontWeight": "500"}],
+                        "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "700"}],
+                        "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "700"}]
+                    }
+                },
+            },
+        }
+    </script>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(225, 226, 237, 0.5);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .bento-item { transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1); }
+        .bento-item:hover { transform: translateY(-4px); box-shadow: 0 12px 24px rgba(0, 0, 0, 0.08); }
+    </style>
+</head>
+<body class="bg-background text-on-background min-h-screen">
+<!-- SideNavBar -->
+<aside class="w-sidebar-width h-screen fixed left-0 top-0 bg-surface-container-low z-50 flex flex-col h-full py-8 px-4 gap-stack-gap border-r border-outline-variant/30 hidden md:flex">
+<div class="flex flex-col gap-2 mb-8 px-4">
+<div class="w-12 h-12 bg-primary-container rounded-xl flex items-center justify-center mb-4">
+<span class="material-symbols-outlined text-on-primary-container" style="font-variation-settings: 'FILL' 1;">account_balance_wallet</span>
+</div>
+<h1 class="font-headline-md text-headline-md font-bold text-primary">AssetFlow</h1>
+<p class="text-secondary text-sm">Enterprise Resource</p>
+</div>
+<nav class="flex-1 space-y-2">
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="font-sidebar-item text-sidebar-item">Dashboard</span>
+</a>
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="font-sidebar-item text-sidebar-item">Assets</span>
+</a>
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">build</span>
+<span class="font-sidebar-item text-sidebar-item">Maintenance</span>
+</a>
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">group</span>
+<span class="font-sidebar-item text-sidebar-item">Resources</span>
+</a>
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">fact_check</span>
+<span class="font-sidebar-item text-sidebar-item">Audit</span>
+</a>
+<a class="flex items-center gap-3 bg-primary-container text-on-primary-container rounded-xl border-l-4 border-primary px-4 py-3 transition-all" href="#">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">settings</span>
+<span class="font-sidebar-item text-sidebar-item">Settings</span>
+</a>
+</nav>
+<div class="mt-auto space-y-2 border-t border-outline-variant/30 pt-6">
+<button class="w-full bg-primary text-on-primary py-3 px-4 rounded-xl font-sidebar-item text-sidebar-item flex items-center justify-center gap-2 active:scale-95 transition-transform">
+                Quick Audit
+            </button>
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all" href="#">
+<span class="material-symbols-outlined">contact_support</span>
+<span class="font-sidebar-item text-sidebar-item">Support</span>
+</a>
+<a class="flex items-center gap-3 text-secondary px-4 py-3 hover:bg-surface-container-high rounded-xl transition-all text-error" href="#">
+<span class="material-symbols-outlined">logout</span>
+<span class="font-sidebar-item text-sidebar-item">Log Out</span>
+</a>
+</div>
+</aside>
+<div class="md:ml-sidebar-width flex flex-col min-h-screen">
+<!-- TopNavBar -->
+<header class="w-full h-16 sticky top-0 backdrop-blur-xl bg-surface/80 z-40 flex items-center justify-between px-margin-desktop shadow-sm border-b border-outline-variant/10">
+<div class="flex items-center gap-8">
+<div class="relative group">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-outline">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container-low border-none rounded-xl text-body-md font-body-md focus:ring-2 focus:ring-primary w-64 transition-all" placeholder="Search resources..." type="text"/>
+</div>
+<nav class="hidden lg:flex items-center gap-6">
+<a class="font-body-md text-body-md text-secondary hover:text-primary transition-colors" href="#">Dashboard</a>
+<a class="font-body-md text-body-md text-secondary hover:text-primary transition-colors" href="#">Assets</a>
+<a class="font-body-md text-body-md text-secondary hover:text-primary transition-colors" href="#">Maintenance</a>
+</nav>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-2">
+<button class="p-2 text-secondary hover:bg-secondary-container/50 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="p-2 text-secondary hover:bg-secondary-container/50 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="p-2 text-secondary hover:bg-secondary-container/50 rounded-full transition-colors active:scale-95">
+<span class="material-symbols-outlined">apps</span>
+</button>
+</div>
+<div class="h-10 w-10 rounded-full overflow-hidden border-2 border-primary-container p-0.5">
+<img class="w-full h-full object-cover rounded-full" data-alt="Professional headshot of a female executive in her late 30s with short dark hair, wearing a navy blue tailored blazer against a soft-focus minimalist office backdrop. High-key lighting highlights her confident expression and modern aesthetic, perfectly matching a premium enterprise software user profile." src="https://lh3.googleusercontent.com/aida-public/AB6AXuB5pBHwEISWmqxnJUVcuZocPG0wtnwBB4l9LrfWPkeRSCRkZlCYXLuowZhNHqThYYOa412CGpcAks15efq3duA5-kIWPNSgK-QDwCA1ESX1_JmIR_iNomH0QRe-qjxwHh0hKEivslvMtEcLZAc-gbMAwMDBSOQzH_RSoCZfosX9hAKlvP4lYGrZLx5mYi0zr290VQbLSfhgVm6C2nst0lv4uYzQgy7fpFNje33ApxQ62PFGr3vM8YzjaDWbQ_qM7PCw59jAcdyxj9Va"/>
+</div>
+</div>
+</header>
+<!-- Main Content Area -->
+<main class="flex-1 p-margin-desktop max-w-container-max mx-auto w-full">
+<!-- Profile Header -->
+<section class="mb-12 relative">
+<div class="h-48 w-full rounded-3xl overflow-hidden mb-[-4rem] bg-gradient-to-r from-primary-container to-surface-tint">
+
+</div>
+<div class="flex flex-col md:flex-row items-end gap-6 px-8">
+<div class="relative group">
+<div class="w-32 h-32 md:w-40 md:h-40 rounded-full border-4 border-surface shadow-xl overflow-hidden bg-surface-container">
+<img class="w-full h-full object-cover" data-alt="A close-up professional portrait of Elena Vance, a Senior Operations Manager. She has an approachable smile, wearing refined corporate attire. The background is a clean, bright studio setting with soft shadows, embodying an expensive, high-end enterprise aesthetic with cool blue and white tones." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDUjKLwVTZfQKi3zCZSGsqLNawBVSS-dnT-PfikohHJsyGjoekoqwD6SDCoosY_0WJy8e5JDEOT9e15b6nfBpUhEvEn90p35G_FoLGQqjT-dLDCK25OcMxFdNM0Q5jHuxNqpWAQS5d7TSqfyYnFouV9uAH19qO5P9ChkIo2zmfLnpB2hhrCsDE9J7QuVdNbLwyoXBhWTegBbQ9-ioda4OEXO6iVeEXyYxZiPUw1ICYlx23oIO95n6Dt1RX5U9ySu-v34Lg1lX3R0-_Q"/>
+</div>
+<button class="absolute bottom-2 right-2 p-2 bg-primary text-on-primary rounded-full shadow-lg border-2 border-surface active:scale-90 transition-transform">
+<span class="material-symbols-outlined text-sm">photo_camera</span>
+</button>
+</div>
+<div class="pb-4 flex-1">
+<h2 class="font-headline-lg text-headline-lg text-on-surface">Elena Vance</h2>
+<div class="flex flex-wrap items-center gap-3 mt-1">
+<span class="bg-secondary-container text-on-secondary-container px-3 py-1 rounded-full font-label-caps text-label-caps">Senior Operations Manager</span>
+<span class="bg-surface-container-high text-secondary px-3 py-1 rounded-full font-label-caps text-label-caps">Department: Logistics &amp; Assets</span>
+<span class="flex items-center gap-1 text-primary font-body-md text-body-md">
+<span class="material-symbols-outlined text-[18px]">verified</span> Verified Employee
+                            </span>
+</div>
+</div>
+<div class="pb-4 flex gap-3">
+<button class="px-6 py-2.5 bg-surface-container-high text-on-surface rounded-xl font-sidebar-item text-sidebar-item hover:bg-surface-container-highest transition-colors active:scale-95">Edit Profile</button>
+<button class="px-6 py-2.5 bg-primary text-on-primary rounded-xl font-sidebar-item text-sidebar-item hover:shadow-lg transition-all active:scale-95">Share Profile</button>
+</div>
+</div>
+</section>
+<!-- Bento Grid Layout -->
+<div class="grid grid-cols-1 lg:grid-cols-12 gap-gutter">
+<!-- Left Column: Personal Info & Security -->
+<div class="lg:col-span-4 space-y-gutter">
+<!-- Personal Information -->
+<div class="glass-card rounded-3xl p-8 bento-item">
+<div class="flex items-center justify-between mb-6">
+<h3 class="font-headline-md text-[18px] text-on-surface">Personal Information</h3>
+<span class="material-symbols-outlined text-outline">badge</span>
+</div>
+<div class="space-y-5">
+<div>
+<label class="font-label-caps text-label-caps text-outline block mb-1.5">FULL NAME</label>
+<p class="font-body-lg text-body-lg text-on-surface">Elena Vance</p>
+</div>
+<div>
+<label class="font-label-caps text-label-caps text-outline block mb-1.5">EMAIL ADDRESS</label>
+<p class="font-body-lg text-body-lg text-on-surface">e.vance@assetflow.corp</p>
+</div>
+<div>
+<label class="font-label-caps text-label-caps text-outline block mb-1.5">PHONE NUMBER</label>
+<p class="font-body-lg text-body-lg text-on-surface">+1 (555) 234-8901</p>
+</div>
+<div>
+<label class="font-label-caps text-label-caps text-outline block mb-1.5">EMPLOYEE ID</label>
+<div class="flex items-center gap-2">
+<span class="bg-surface-container-low px-3 py-1 rounded-lg text-primary font-mono text-sm border border-outline-variant/30">AF-9022-LOG</span>
+<span class="material-symbols-outlined text-sm text-outline cursor-pointer hover:text-primary">content_copy</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Security Quick Links -->
+<div class="glass-card rounded-3xl p-8 bento-item bg-primary/5">
+<div class="flex items-center gap-3 mb-6">
+<span class="material-symbols-outlined text-primary">security</span>
+<h3 class="font-headline-md text-[18px] text-on-surface">Security</h3>
+</div>
+<div class="space-y-3">
+<button class="w-full flex items-center justify-between p-4 bg-surface rounded-2xl hover:bg-primary-container hover:text-on-primary transition-all group active:scale-[0.98]">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">password</span>
+<span class="font-sidebar-item text-sidebar-item">Change Password</span>
+</div>
+<span class="material-symbols-outlined opacity-0 group-hover:opacity-100 transition-opacity">chevron_right</span>
+</button>
+<button class="w-full flex items-center justify-between p-4 bg-surface rounded-2xl hover:bg-primary-container hover:text-on-primary transition-all group active:scale-[0.98]">
+<div class="flex items-center gap-3">
+<span class="material-symbols-outlined">vibration</span>
+<span class="font-sidebar-item text-sidebar-item">Enable 2FA Auth</span>
+</div>
+<span class="bg-success/10 text-success text-[10px] px-2 py-0.5 rounded-full group-hover:bg-on-primary/20 group-hover:text-on-primary">Disabled</span>
+</button>
+</div>
+</div>
+</div>
+<!-- Center/Right Column: Assets & History -->
+<div class="lg:col-span-8 space-y-gutter">
+<!-- Assigned Assets Grid -->
+<div class="glass-card rounded-3xl p-8 bento-item">
+<div class="flex items-center justify-between mb-8">
+<div>
+<h3 class="font-headline-md text-[18px] text-on-surface">Assigned Assets</h3>
+<p class="text-secondary font-body-md text-sm">4 items currently in your possession</p>
+</div>
+<button class="text-primary font-sidebar-item text-sidebar-item hover:underline">View All</button>
+</div>
+<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+<!-- Asset Card 1 -->
+<div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20 hover:border-primary/30 transition-colors flex gap-4">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="High-end silver laptop, a MacBook Pro 16-inch, positioned elegantly on a minimalist white desk with soft sunlight. High-quality product photography with a clean, professional enterprise look." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAq66DxYAJsg0iUGoYcgpvoIIETcEAsNvmVdrS862jPwSnK_pXMrgB726GYwUnBNYxInm3-UtQ6darc3HuRv4ssXKuBPoNHbJiwbGfI_dIUQJbFsOYu8ubSpkLhcHv-ufAaE-j3cqkvgAFgsZktLorIKrH7X3ytJDUdm8V9TgKlrRV8maFvniu9fGIwW8H1x0Ij1qlCbATG2p5vM3k2mpG060ck8BS2ORc2LuvrsKh1A-580qQIV_3JY6FlL2dxVoJD_31CEBwhohoe"/>
+</div>
+<div class="flex-1 overflow-hidden">
+<h4 class="font-sidebar-item text-sidebar-item truncate">MacBook Pro 16" (M3 Max)</h4>
+<p class="text-xs text-outline mb-2">ID: DEV-LAP-4421</p>
+<span class="bg-primary-container/10 text-primary-container text-[10px] px-2 py-0.5 rounded-full font-bold">IN USE</span>
+</div>
+</div>
+<!-- Asset Card 2 -->
+<div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20 hover:border-primary/30 transition-colors flex gap-4">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Premium black noise-canceling headphones, Sony WH-1000XM5, on a minimalist wooden texture background. Soft ambient lighting, clean focus, modern workspace vibes." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDmPlba4v1tONxeOJVZeYZvkkaaT-hJoq_gRbNl-Ke1kV8KeZkqTwThWE6FhflyEihEGlWbYfJSEicUs0biJG-oWiWSZw6-XF6EuplL4FKdX4fsozfVuk_e8_8nlGknGmIkNoMuf_SyhuOamPhrzIT30PEqDMpMCflNIpQod8Wkk5wHyUobunP2KJNByn4SAg4NxE1Of8EzDF4oApd5Xk8r3Zo6ImEA9FI66CC6hDbxsJ53BFDPURUtpCLXsEyLLYOWRQmV6YUftNfM"/>
+</div>
+<div class="flex-1 overflow-hidden">
+<h4 class="font-sidebar-item text-sidebar-item truncate">Sony WH-1000XM5</h4>
+<p class="text-xs text-outline mb-2">ID: PER-AUD-0092</p>
+<span class="bg-primary-container/10 text-primary-container text-[10px] px-2 py-0.5 rounded-full font-bold">IN USE</span>
+</div>
+</div>
+<!-- Asset Card 3 -->
+<div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20 hover:border-primary/30 transition-colors flex gap-4">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Professional studio microphone on a boom arm, sleek metallic finish, minimalist home office setting with blurred warm lights in the background." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnItgalPpE8PXbBx7wAVxmLlStDDNpLPrv8mAb2nE0GaX6xjwIGf6M2NME0AM9owsvehB66Kq9ajSapmJ8LvPMAgvmgTxEBtBJjc7T3k3yWgrFOVMU9CEtNHg0DNr58yKUwRI7rZq9REtlnvFlJU5wMWU76nelg3qxPYGiyZIKczd2DGC7OSu7oNJVFCeOSRBdTv25WrcwmU0V7A8UWJSwwtGxljjAh3GoaHm17s5rgYOaiYAO5VrSjVWoC7aPBi3E89Jw_Vl3fYBq"/>
+</div>
+<div class="flex-1 overflow-hidden">
+<h4 class="font-sidebar-item text-sidebar-item truncate">Shure SM7B Mic</h4>
+<p class="text-xs text-outline mb-2">ID: MEDIA-MIC-882</p>
+<span class="bg-warning/10 text-tertiary text-[10px] px-2 py-0.5 rounded-full font-bold">IN REPAIR</span>
+</div>
+</div>
+<!-- Asset Card 4 -->
+<div class="p-4 rounded-2xl bg-surface-container-low border border-outline-variant/20 hover:border-primary/30 transition-colors flex gap-4">
+<div class="w-16 h-16 rounded-xl overflow-hidden bg-surface-container-high flex-shrink-0">
+<img class="w-full h-full object-cover" data-alt="Ergonomic high-end designer office chair in gray mesh, sleek aluminum frame, situated in a brightly lit modern glass office with plants." src="https://lh3.googleusercontent.com/aida-public/AB6AXuDhO8og0QVpD0c7yCD8DqeVyddc8-vikpd34s-JffZEAGs3oLuWThIBsA-LdC0j_3e2qW7_uWivBEm2hgj354KFKof770lWGYbao9rbswD25U9yd7OQVd-M2dCRmnQV-ADwFh20XacMJT9xDPjeUYpnSx5mffvddEryyo26a8FCzFtvnEwnCpyYWQKE8VQP7NW1gkFLWy1Mv6aRt8GG0KC3VL6MqBe2E4-fbL05-3x26GLvP_-WKcDrsp3LP40lF7sNb6nOu6tpIiOi"/>
+</div>
+<div class="flex-1 overflow-hidden">
+<h4 class="font-sidebar-item text-sidebar-item truncate">Herman Miller Aeron</h4>
+<p class="text-xs text-outline mb-2">ID: FUR-CHR-0012</p>
+<span class="bg-primary-container/10 text-primary-container text-[10px] px-2 py-0.5 rounded-full font-bold">IN USE</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Activity History Timeline -->
+<div class="glass-card rounded-3xl p-8 bento-item">
+<div class="flex items-center justify-between mb-8">
+<h3 class="font-headline-md text-[18px] text-on-surface">Recent Activity</h3>
+<button class="p-2 text-outline hover:text-primary transition-colors">
+<span class="material-symbols-outlined">filter_list</span>
+</button>
+</div>
+<div class="space-y-6 relative before:absolute before:left-3 before:top-2 before:bottom-2 before:w-px before:bg-outline-variant/40">
+<!-- History Item 1 -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 bg-primary rounded-full flex items-center justify-center border-4 border-surface shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-on-primary" style="font-variation-settings: 'FILL' 1;">add</span>
+</div>
+<div>
+<h5 class="font-sidebar-item text-sidebar-item text-on-surface">New Asset Registered</h5>
+<p class="text-body-md text-sm text-secondary">Added "Logitech MX Master 3S" to department inventory.</p>
+<span class="text-xs text-outline mt-1 block">Today, 10:45 AM</span>
+</div>
+</div>
+<!-- History Item 2 -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 bg-secondary-container rounded-full flex items-center justify-center border-4 border-surface shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-on-secondary-container" style="font-variation-settings: 'FILL' 1;">fact_check</span>
+</div>
+<div>
+<h5 class="font-sidebar-item text-sidebar-item text-on-surface">Audit Completed</h5>
+<p class="text-body-md text-sm text-secondary">Annual Q3 infrastructure audit finalized and signed.</p>
+<span class="text-xs text-outline mt-1 block">Yesterday, 4:20 PM</span>
+</div>
+</div>
+<!-- History Item 3 -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 bg-error/20 rounded-full flex items-center justify-center border-4 border-surface shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-error" style="font-variation-settings: 'FILL' 1;">report</span>
+</div>
+<div>
+<h5 class="font-sidebar-item text-sidebar-item text-on-surface">Maintenance Flagged</h5>
+<p class="text-body-md text-sm text-secondary">Reported battery issues for "Dell XPS 15 - ID: 2209".</p>
+<span class="text-xs text-outline mt-1 block">Oct 12, 2023</span>
+</div>
+</div>
+<!-- History Item 4 -->
+<div class="relative pl-10">
+<div class="absolute left-0 top-1 w-6 h-6 bg-surface-container-high rounded-full flex items-center justify-center border-4 border-surface shadow-sm">
+<span class="material-symbols-outlined text-[12px] text-outline" style="font-variation-settings: 'FILL' 1;">edit</span>
+</div>
+<div>
+<h5 class="font-sidebar-item text-sidebar-item text-on-surface">Profile Updated</h5>
+<p class="text-body-md text-sm text-secondary">Modified contact phone number and emergency contact.</p>
+<span class="text-xs text-outline mt-1 block">Oct 10, 2023</span>
+</div>
+</div>
+</div>
+<button class="w-full mt-8 py-3 border border-outline-variant/50 rounded-xl text-secondary font-sidebar-item text-sidebar-item hover:bg-surface-container-low transition-colors active:scale-95">Load More Activity</button>
+</div>
+</div>
+</div>
+</main>
+<!-- Footer -->
+<footer class="mt-auto py-12 px-margin-desktop border-t border-outline-variant/20 flex flex-col md:flex-row justify-between items-center gap-6 text-outline font-body-md text-sm">
+<div class="flex items-center gap-2">
+<span class="font-bold text-primary">AssetFlow</span>
+<span>© 2023 Enterprise Resource Management</span>
+</div>
+<div class="flex gap-8">
+<a class="hover:text-primary transition-colors" href="#">Privacy Policy</a>
+<a class="hover:text-primary transition-colors" href="#">Terms of Service</a>
+<a class="hover:text-primary transition-colors" href="#">Cookie Settings</a>
+</div>
+</footer>
+</div>
+<!-- Mobile Bottom Navigation -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 h-16 bg-surface border-t border-outline-variant/30 px-6 flex items-center justify-between z-50">
+<button class="flex flex-col items-center justify-center gap-1 text-secondary">
+<span class="material-symbols-outlined">dashboard</span>
+<span class="text-[10px] font-medium">Home</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 text-secondary">
+<span class="material-symbols-outlined">inventory_2</span>
+<span class="text-[10px] font-medium">Assets</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">person</span>
+<span class="text-[10px] font-medium">Profile</span>
+</button>
+<button class="flex flex-col items-center justify-center gap-1 text-secondary">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</button>
+</nav>
+<script>
+        // Micro-interactions for asset cards
+        document.querySelectorAll('.bento-item').forEach(card => {
+            card.addEventListener('mouseenter', () => {
+                // Subtle lift already handled by CSS, can add more logic here
+            });
+        });
+
+        // Simple tab/navigation active state logic (visual only for this demo)
+        const currentPath = window.location.pathname;
+        const navLinks = document.querySelectorAll('aside nav a');
+        navLinks.forEach(link => {
+            if (link.textContent.includes('Settings')) {
+                // This is our simulated active tab for "User Profile" which falls under Settings
+            }
+        });
+    </script>
+</body></html>

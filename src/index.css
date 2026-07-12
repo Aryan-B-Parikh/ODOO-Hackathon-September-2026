@@ -1,0 +1,45 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+html, body { transition: background-color 250ms, color 250ms; }
+
+@layer base {
+  body {
+    font-family: 'Inter', sans-serif;
+  }
+}
+
+.glass-panel {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(225, 226, 237, 0.5);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.7);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(225, 226, 237, 0.8);
+}
+
+html.dark { background: #0F172A; color: #F8FAFC; transition: background-color 250ms, color 250ms; }
+.dark .glass-card { background: rgba(30, 41, 59, 0.7); border-color: rgba(51, 65, 85, 0.5); }
+.dark .glass-panel { background: rgba(0, 15, 42, 0.7); backdrop-filter: blur(12px); }
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #d1d5db;
+  border-radius: 10px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #c3c6d7;
+}
+
+.active-nav-indicator {
+  box-shadow: inset 4px 0 0 0 #004ac6;
+}
