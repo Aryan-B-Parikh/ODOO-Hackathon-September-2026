@@ -3,10 +3,10 @@
  * 
  * Master barrel export combining all shared domains.
  */
-export * as contracts from './contracts';
-export * as dto from './dto';
-export * as types from './types';
-export * as enums from './enums';
-export * as constants from './constants';
-export * as schemas from './schemas';
-export * as utils from './utils';
+export * from './contracts/index.js';
+export * from './dto/index.js';
+export * from './types/index.js';
+export * from './enums/index.js';
+export * from './constants/index.js';
+export * from './schemas/index.js';
+export * from './utils/index.js';

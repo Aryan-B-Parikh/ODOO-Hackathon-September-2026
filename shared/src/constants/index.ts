@@ -3,5 +3,5 @@
  * 
  * Magic strings, numbers, and static configurations.
  */
-// export * from './some-constant';
+// export * from './some-constant.js';
 export {};

@@ -3,5 +3,5 @@
  * 
  * Data Transfer Objects ensuring unified request/response shapes between frontend and backend.
  */
-// export * from './some-dto';
-export {};
+// export * from './some-dto.js';
+export * from './auth.dto.js';

@@ -11,13 +11,23 @@
  * - Must lazy load business features.
  * - No business logic allowed here.
  */
+import { ProtectedRoute } from '@components/ProtectedRoute';
+import { LoginPage } from '@features/auth/pages/LoginPage';
 import { AppLayout } from '@layouts/AppLayout';
 import { createBrowserRouter, RouterProvider } from 'react-router-dom';
 
 const router = createBrowserRouter([
   {
+    path: '/login',
+    element: <LoginPage />,
+  },
+  {
     path: '/',
-    element: <AppLayout />,
+    element: (
+      <ProtectedRoute>
+        <AppLayout />
+      </ProtectedRoute>
+    ),
     errorElement: <div>404 - Not Found (Placeholder)</div>,
     children: [
       {

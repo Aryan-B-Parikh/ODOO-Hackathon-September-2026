@@ -19,6 +19,7 @@ import { httpLogger } from '../core/logger.js';
 
 import { globalErrorHandler, NotFoundError } from './middleware/error-handler.js';
 import { requestIdMiddleware } from './middleware/request-id.js';
+import { authRouter } from './routes/auth.routes.js';
 import { healthRouter } from './routes/health.js';
 
 
@@ -46,10 +47,13 @@ app.use(httpLogger);
 // 7. Health Routes (Bypass Auth)
 app.use('/health', healthRouter);
 
-// 8. 404 Handler for unmatched routes
+// 8. Auth Routes
+app.use('/api/v1/auth', authRouter);
+
+// 9. 404 Handler for unmatched routes
 app.use('*', (req, res, next) => {
   next(new NotFoundError(`Route ${req.originalUrl} not found`));
 });
 
-// 9. Global Error Handler
+// 10. Global Error Handler
 app.use(globalErrorHandler);
