@@ -1,5 +1,6 @@
-import React, { useContext, useState } from 'react';
+import React, { useContext, useState, useEffect } from 'react';
 import { AppContext } from '../context/AppContext';
+import { useSearchParams } from 'react-router-dom';
 
 export default function AssetDirectory() {
   const {
@@ -11,7 +12,8 @@ export default function AssetDirectory() {
     deleteAsset,
     updateAssetStatus,
     toggleFavoriteAsset,
-    favorites
+    favorites,
+    loadBackendData
   } = useContext(AppContext);
 
   // Search & Filters states
@@ -57,6 +59,16 @@ export default function AssetDirectory() {
   const [showScanModal, setShowScanModal] = useState(false);
   const [scanResult, setScanResult] = useState(null);
 
+  // Deep-link: auto-open Add Asset modal if ?action=add is in URL
+  const [searchParams, setSearchParams] = useSearchParams();
+  useEffect(() => {
+    if (searchParams.get('action') === 'add') {
+      setShowAddModal(true);
+      // Clean the URL param after opening
+      setSearchParams({}, { replace: true });
+    }
+  }, []);
+
   // Register Asset Form states
   const [assetForm, setAssetForm] = useState({
     name: '',
@@ -80,6 +92,8 @@ export default function AssetDirectory() {
   // File Upload states
   const [uploadedPhotos, setUploadedPhotos] = useState([]);
   const [uploadedDocs, setUploadedDocs] = useState([]);
+  const [photoFiles, setPhotoFiles] = useState([]);
+  const [docFiles, setDocFiles] = useState([]);
   const [isDragging, setIsDragging] = useState(false);
 
   // Change category helper to pre-fill dynamic values
@@ -99,21 +113,52 @@ export default function AssetDirectory() {
   };
 
   // Submit Handler
-  const handleSaveAsset = (e) => {
+  const handleSaveAsset = async (e) => {
     e.preventDefault();
     if (!assetForm.name) return;
 
+    // Filter to keep only existing uploaded photo/doc strings (URLs or names)
+    // and let the backend merge newly uploaded files
     const payload = {
       ...assetForm,
       avatar: assetForm.assignedTo !== 'Unassigned' ? 'https://lh3.googleusercontent.com/aida-public/AB6AXuCAb3JSNRiEJXx4US2QdyP_t6zJ1IHL-M2I52CZ-a6sQX_XxRl-OlAQJznE_VNZ-Zf6nUCJUJ2R4yx3g1naGO0UAAJF6HTFekb2H6qPzYhcc9blXxsUI1zuaCRJ0jpzz8NzCRJ1LZAsGSX2ex6x3qcBpfID0i-wLkA8XbyNBTDDJJXlzhD16Wthm_m0UNcpIEEiyhiCr-9zXRjKLItZkpIqnYwpmzlNxTIHOzq0hzxekvOdFlDYDqCuac_XZU4z2uDYUjQDxCJh2Ayq' : '',
-      photos: uploadedPhotos,
-      documents: uploadedDocs
+      photos: uploadedPhotos.filter(p => typeof p === 'string' && p.startsWith('http')),
+      documents: uploadedDocs.filter(d => typeof d === 'string' && d.startsWith('http'))
     };
 
-    if (editingAsset) {
-      updateAsset(editingAsset.id, payload);
-    } else {
-      addAsset(payload);
+    try {
+      let savedAsset;
+      if (editingAsset) {
+        savedAsset = await updateAsset(editingAsset.id, payload);
+      } else {
+        savedAsset = await addAsset(payload);
+      }
+
+      // If we have files to upload, send them to the upload endpoint
+      const targetId = editingAsset ? editingAsset.id : savedAsset?.id;
+      if (targetId && (photoFiles.length > 0 || docFiles.length > 0)) {
+        const formData = new FormData();
+        photoFiles.forEach(file => {
+          formData.append('photos', file);
+        });
+        docFiles.forEach(file => {
+          formData.append('documents', file);
+        });
+
+        const token = localStorage.getItem('assetflow_token');
+        await fetch(`http://localhost:5050/api/assets/${targetId}/upload`, {
+          method: 'POST',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          },
+          body: formData
+        });
+
+        // Trigger full reload to get latest URLs from the database
+        await loadBackendData();
+      }
+    } catch (error) {
+      console.error('Failed to save asset or upload files:', error);
     }
 
     // Reset & Close
@@ -121,6 +166,8 @@ export default function AssetDirectory() {
     setEditingAsset(null);
     setUploadedPhotos([]);
     setUploadedDocs([]);
+    setPhotoFiles([]);
+    setDocFiles([]);
   };
 
   // Open Edit Modal
@@ -146,6 +193,8 @@ export default function AssetDirectory() {
     });
     setUploadedPhotos(asset.photos || []);
     setUploadedDocs(asset.documents || []);
+    setPhotoFiles([]);
+    setDocFiles([]);
     setShowAddModal(true);
   };
 
@@ -171,6 +220,8 @@ export default function AssetDirectory() {
     });
     setUploadedPhotos([]);
     setUploadedDocs([]);
+    setPhotoFiles([]);
+    setDocFiles([]);
     setShowAddModal(true);
   };
 

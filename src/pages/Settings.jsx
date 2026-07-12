@@ -111,43 +111,52 @@ function UsersPanel() {
   const [showInviteModal, setShowInviteModal] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
   
+  const [error, setError] = useState('');
   const [form, setForm] = useState({
     name: '',
     email: '',
     role: 'Employee',
     phone: '',
-    status: 'Active'
+    status: 'Active',
+    secondAdminSignature: ''
   });
 
   const handleOpenInvite = () => {
     setEditingUser(null);
-    setForm({ name: '', email: '', role: 'Employee', phone: '', status: 'Active' });
+    setForm({ name: '', email: '', role: 'Employee', phone: '', status: 'Active', secondAdminSignature: '' });
+    setError('');
     setShowInviteModal(true);
   };
 
   const handleOpenEdit = (u) => {
     setEditingUser(u);
-    setForm({ name: u.name, email: u.email, role: u.role, phone: u.phone || '', status: u.status || 'Active' });
+    setForm({ name: u.name, email: u.email, role: u.role, phone: u.phone || '', status: u.status || 'Active', secondAdminSignature: '' });
+    setError('');
     setShowInviteModal(true);
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (!form.name || !form.email) return;
+    setError('');
 
-    if (editingUser) {
-      updateUser(editingUser.email, form);
-    } else {
-      signup({
-        name: form.name,
-        email: form.email,
-        password: 'password123',
-        role: form.role,
-        phone: form.phone,
-        status: form.status
-      });
+    try {
+      if (editingUser) {
+        await updateUser(editingUser.email, form);
+      } else {
+        await signup({
+          name: form.name,
+          email: form.email,
+          password: 'password123',
+          role: form.role,
+          phone: form.phone,
+          status: form.status
+        });
+      }
+      setShowInviteModal(false);
+    } catch (err) {
+      setError(err.message || 'An error occurred. Please try again.');
     }
-    setShowInviteModal(false);
   };
 
   const handleDelete = (email) => {
@@ -212,6 +221,13 @@ function UsersPanel() {
             </div>
             
             <form onSubmit={handleSubmit} className="space-y-4">
+              {error && (
+                <div className="p-3 bg-error-container text-error rounded-xl text-xs font-semibold border border-error/20 flex items-start gap-2 animate-fadeIn">
+                  <span className="material-symbols-outlined text-[16px] shrink-0">error</span>
+                  <span>{error}</span>
+                </div>
+              )}
+
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1.5">Full Name *</label>
                 <input 
@@ -252,6 +268,23 @@ function UsersPanel() {
                   <option value="Viewer">Viewer</option>
                 </select>
               </div>
+
+              {form.role === 'Admin' && editingUser?.role !== 'Admin' && (
+                <div className="p-3.5 bg-error-container/5 rounded-xl border border-error/20 space-y-2 animate-fadeIn">
+                  <label className="text-xs font-bold uppercase tracking-wider text-error block">Co-signing Admin Email *</label>
+                  <input 
+                    type="email" 
+                    required
+                    placeholder="secondary-admin@company.com"
+                    className="w-full px-4 py-2.5 rounded-xl border border-error/50 bg-white dark:bg-surface-container text-sm focus:ring-2 focus:ring-error/20 outline-none text-on-surface"
+                    value={form.secondAdminSignature || ''}
+                    onChange={e => setForm(prev => ({ ...prev, secondAdminSignature: e.target.value }))}
+                  />
+                  <p className="text-[10px] leading-relaxed text-on-surface-variant">
+                    ⚠️ <strong>Dual-Authorization Policy:</strong> Promoting any member to Administrator requires co-signature verification from an active secondary Administrator. An email audit notification will be dispatched.
+                  </p>
+                </div>
+              )}
 
               <div>
                 <label className="text-xs font-bold uppercase tracking-wider text-on-surface-variant block mb-1.5">User Status</label>

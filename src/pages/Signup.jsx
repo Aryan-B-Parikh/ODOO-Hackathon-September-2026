@@ -16,6 +16,21 @@ export default function Signup() {
   const [success, setSuccess] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  // Password strength helper
+  const getPasswordStrength = (pwd) => {
+    if (!pwd) return null;
+    let score = 0;
+    if (pwd.length >= 8) score++;
+    if (/[A-Z]/.test(pwd)) score++;
+    if (/[a-z]/.test(pwd)) score++;
+    if (/\d/.test(pwd)) score++;
+    if (/[@$!%*?&#]/.test(pwd)) score++;
+    if (score <= 2) return { level: 'Weak', color: 'bg-error', textColor: 'text-error', width: 'w-1/3' };
+    if (score <= 3) return { level: 'Fair', color: 'bg-amber-500', textColor: 'text-amber-600', width: 'w-2/3' };
+    return { level: 'Strong', color: 'bg-emerald-500', textColor: 'text-emerald-600', width: 'w-full' };
+  };
+  const passwordStrength = getPasswordStrength(password);
+
   const handleSignup = async (e) => {
     e.preventDefault();
     if (!name || !email || !password) {
@@ -179,6 +194,19 @@ export default function Signup() {
                     required
                   />
                 </div>
+                {/* Live Password Strength Meter */}
+                {passwordStrength && (
+                  <div className="pt-1.5 space-y-1">
+                    <div className="h-1.5 w-full bg-outline-variant/30 rounded-full overflow-hidden">
+                      <div className={`h-full rounded-full transition-all duration-300 ${passwordStrength.color} ${passwordStrength.width}`}></div>
+                    </div>
+                    <p className={`text-[11px] font-bold ${passwordStrength.textColor}`}>
+                      Password strength: {passwordStrength.level}
+                      {passwordStrength.level === 'Weak' && ' — add uppercase, numbers & symbols'}
+                      {passwordStrength.level === 'Fair' && ' — add a special character to strengthen'}
+                    </p>
+                  </div>
+                )}
               </div>
 
               {/* Phone (Optional) */}

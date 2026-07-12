@@ -1,6 +1,8 @@
 import express from 'express';
 import cors from 'cors';
 import morgan from 'morgan';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import authRouter from './routes/auth.js';
 import departmentsRouter from './routes/departments.js';
 import categoriesRouter from './routes/categories.js';
@@ -14,11 +16,16 @@ import dashboardRouter from './routes/dashboard.js';
 import notificationsRouter from './routes/notifications.js';
 import reportsRouter from './routes/reports.js';
 
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
+
 const app = express();
 
 app.use(cors());
 app.use(express.json());
 app.use(morgan('dev'));
+
+// Serve uploaded asset files (photos & documents) as static files
+app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
 // Mount Routers
 app.use('/api/auth', authRouter);

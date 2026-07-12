@@ -245,33 +245,38 @@ export const AppProvider = ({ children }) => {
       setUsers(empsData);
     } catch (error) {
       console.error('Update employee error:', error);
+      throw error;
     }
   };
 
   // Asset Operations
   const addAsset = async (asset) => {
     try {
-      await apiCall('/assets', {
+      const result = await apiCall('/assets', {
         method: 'POST',
         body: JSON.stringify(asset)
       });
       const assetsData = await apiCall('/assets');
       setAssets(assetsData);
+      return result;
     } catch (error) {
       console.error('Add asset error:', error);
+      throw error;
     }
   };
 
   const updateAsset = async (id, updatedFields) => {
     try {
-      await apiCall(`/assets/${id}`, {
+      const result = await apiCall(`/assets/${id}`, {
         method: 'PUT',
         body: JSON.stringify(updatedFields)
       });
       const assetsData = await apiCall('/assets');
       setAssets(assetsData);
+      return result;
     } catch (error) {
       console.error('Update asset error:', error);
+      throw error;
     }
   };
 
@@ -598,7 +603,8 @@ export const AppProvider = ({ children }) => {
       clearNotifications,
       setTheme,
       setThemeColor,
-      apiCall
+      apiCall,
+      loadBackendData
     }}>
       {children}
     </AppContext.Provider>

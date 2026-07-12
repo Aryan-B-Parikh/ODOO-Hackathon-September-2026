@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../db.js';
 import { authMiddleware, checkRole } from '../middleware/auth.js';
+import { uploadAssetFiles } from '../upload.js';
 
 const router = express.Router();
 
@@ -485,6 +486,62 @@ router.delete('/:id', authMiddleware, checkRole(['Admin']), async (req, res) => 
     console.error(error);
     res.status(500).json({ error: 'Failed to delete asset.' });
   }
+});
+
+// POST upload photos / documents for an asset
+// Accepts multipart/form-data with fields: photos[] and documents[]
+router.post('/:id/upload', authMiddleware, checkRole(['Admin', 'Asset Manager']), (req, res, next) => {
+  uploadAssetFiles(req, res, async (err) => {
+    if (err) {
+      return res.status(400).json({ error: err.message || 'File upload failed.' });
+    }
+    const { id } = req.params;
+    try {
+      const asset = await prisma.asset.findUnique({ where: { id } });
+      if (!asset || asset.isDeleted) {
+        return res.status(404).json({ error: 'Asset not found.' });
+      }
+
+      const photoFiles    = req.files?.photos    || [];
+      const documentFiles = req.files?.documents || [];
+
+      // Build public URL paths (served via /uploads static route)
+      const BASE_URL = process.env.BASE_URL || 'http://localhost:5050';
+
+      const photoRecords = photoFiles.map(f => ({
+        assetId: id,
+        url: `${BASE_URL}/uploads/photos/${f.filename}`,
+        fileName: f.originalname,
+        mimeType: f.mimetype
+      }));
+
+      const docRecords = documentFiles.map(f => ({
+        assetId: id,
+        name: f.originalname,
+        url: `${BASE_URL}/uploads/documents/${f.filename}`,
+        mimeType: f.mimetype
+      }));
+
+      // Persist to DB
+      await prisma.$transaction(async (tx) => {
+        if (photoRecords.length > 0) {
+          await tx.assetImage.createMany({ data: photoRecords });
+        }
+        if (docRecords.length > 0) {
+          await tx.assetDocument.createMany({ data: docRecords });
+        }
+      });
+
+      res.json({
+        success: true,
+        photos: photoRecords.map(p => p.url),
+        documents: docRecords.map(d => ({ name: d.name, url: d.url }))
+      });
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({ error: 'Failed to persist uploaded files.' });
+    }
+  });
 });
 
 export default router;
