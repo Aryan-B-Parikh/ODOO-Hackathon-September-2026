@@ -24,9 +24,22 @@ export const apiClient = axios.create({
 apiClient.interceptors.response.use(
   (response) => response,
   (error) => {
-    if (error.response?.status === 401) {
-      if (window.location.pathname !== '/login') {
-        window.location.href = '/login';
+    if (error.response) {
+      const status = error.response.status;
+      if (status === 401) {
+        if (window.location.pathname !== '/login') {
+          window.location.href = '/login';
+        }
+      } else if (status === 403) {
+        console.error('Forbidden access:', error.response.data);
+      } else if (status === 404) {
+        console.error('Resource not found:', error.response.data);
+      } else if (status === 409) {
+        console.error('Conflict:', error.response.data);
+      } else if (status === 422) {
+        console.error('Validation error:', error.response.data);
+      } else if (status >= 500) {
+        console.error('Server error:', error.response.data);
       }
     }
     return Promise.reject(error);

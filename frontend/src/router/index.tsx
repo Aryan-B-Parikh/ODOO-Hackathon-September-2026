@@ -20,6 +20,7 @@ import { CategoryCreate } from '@features/assets/pages/CategoryCreate';
 import { CategoryEdit } from '@features/assets/pages/CategoryEdit';
 import { CategoryList } from '@features/assets/pages/CategoryList';
 import { LoginPage } from '@features/auth/pages/LoginPage';
+import { DashboardPage } from '@features/dashboard/pages/DashboardPage';
 import { DepartmentList } from '@features/organization/pages/DepartmentList';
 import { EmployeeList } from '@features/organization/pages/EmployeeList';
 import { AppLayout } from '@layouts/AppLayout';
@@ -41,7 +42,7 @@ const router = createBrowserRouter([
     children: [
       {
         path: 'dashboard',
-        element: <div>Dashboard Placeholder</div>,
+        element: <DashboardPage />,
       },
       {
         path: 'departments',
@@ -63,7 +64,7 @@ const router = createBrowserRouter([
     children: [
       {
         index: true,
-        element: <div>Dashboard Placeholder</div>,
+        element: <DashboardPage />,
       },
       {
         path: 'categories',

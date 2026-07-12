@@ -20,8 +20,8 @@ import { AuthController } from '../presentation/controllers/auth.controller.js';
 import { CategoryController } from '../presentation/controllers/category.controller.js';
 import { DepartmentController } from '../presentation/controllers/department.controller.js';
 import { EmployeeController } from '../presentation/controllers/employee.controller.js';
-import { TransferController } from '../presentation/controllers/transfer.controller.js';
 import { MaintenanceController } from '../presentation/controllers/maintenance.controller.js';
+import { TransferController } from '../presentation/controllers/transfer.controller.js';
 
 import { JwtService } from './security/jwt.service.js';
 import { PasswordService } from './security/password.service.js';

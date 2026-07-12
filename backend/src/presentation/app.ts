@@ -54,7 +54,6 @@ app.use(cookieParser());
 app.use(httpLogger);
 
 // 7. API Routes
-app.use('/api/v1/health', healthRoutes);
 app.use('/api/v1/auth', authRoutes);
 app.use('/api/v1/departments', departmentRoutes);
 app.use('/api/v1/employees', employeeRoutes);
@@ -70,6 +69,9 @@ app.get('/api/v1/employees/:id/allocation-history', requireAuth, container.alloc
 app.get('/api/v1/assets/:id/transfers', requireAuth, container.transferController.getByAsset);
 app.get('/api/v1/employees/:id/transfers', requireAuth, container.transferController.getByEmployee);
 app.get('/api/v1/assets/:id/maintenance', requireAuth, container.maintenanceController.getByAsset);
+
+// 8. Health Routes
+app.use('/health', healthRoutes);
 
 // 9. 404 Handler for unmatched routes
 app.use('*', (req, res, next) => {

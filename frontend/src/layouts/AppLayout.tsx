@@ -7,29 +7,26 @@
  * Responsibility:
  * The main application shell (Sidebar, Header, Main Content Area).
  */
-import { Outlet, Link } from 'react-router-dom';
+import { Outlet } from 'react-router-dom';
+
+import { Breadcrumb } from './components/Breadcrumb';
+import { Header } from './components/Header';
+import { Sidebar } from './components/Sidebar';
 
 export function AppLayout() {
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      {/* Header Placeholder */}
-      <header className="h-16 border-b flex items-center px-6">
-        <h1 className="text-xl font-bold">AssetFlow ERP</h1>
-      </header>
-      
-      <div className="flex flex-1">
-        {/* Sidebar Placeholder */}
-        <aside className="w-64 border-r p-4 hidden md:block">
-          <nav className="space-y-2 flex flex-col">
-            <Link to="/app/dashboard" className="p-2 hover:bg-slate-100 rounded">Dashboard</Link>
-            <Link to="/app/departments" className="p-2 hover:bg-slate-100 rounded">Departments</Link>
-            <Link to="/app/employees" className="p-2 hover:bg-slate-100 rounded">Employees</Link>
-            <Link to="/categories" className="p-2 hover:bg-slate-100 rounded">Asset Categories</Link>
-          </nav>
-        </aside>
-        
-        {/* Main Content */}
-        <main className="flex-1 p-6">
+    <div className="min-h-screen bg-background dark:bg-[#0F172A] text-foreground flex transition-colors duration-300">
+      {/* Sidebar - fixed width */}
+      <Sidebar />
+
+      {/* Main Content Area */}
+      <div className="ml-[260px] flex-1 flex flex-col min-h-screen w-[calc(100%-260px)]">
+        {/* Header - sticky top */}
+        <Header />
+
+        {/* Dynamic page contents */}
+        <main className="flex-1 w-full max-w-[1400px] mx-auto p-6 lg:p-8 space-y-6">
+          <Breadcrumb />
           <Outlet />
         </main>
       </div>
