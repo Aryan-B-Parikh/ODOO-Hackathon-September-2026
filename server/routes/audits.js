@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../db.js';
 import { authMiddleware, checkRole } from '../middleware/auth.js';
+import { logActivity } from '../utils/activity.js';
 
 const router = express.Router();
 
@@ -118,6 +119,15 @@ router.post('/', authMiddleware, checkRole(['Admin', 'Auditor']), async (req, re
         });
       }
 
+      await logActivity({
+        userId: req.user.userId,
+        action: 'CREATE_AUDIT_CYCLE',
+        entityType: 'AuditCycle',
+        entityId: cycle.id,
+        newValue: { name: cycleName, department },
+        moduleName: 'AUDITS'
+      }, tx);
+
       return cycle;
     });
 
@@ -219,6 +229,15 @@ router.put('/:id/checklist', authMiddleware, checkRole(['Admin', 'Auditor']), as
           }
         });
       }
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'UPDATE_AUDIT_CHECKLIST',
+        entityType: 'AuditCycle',
+        entityId: id,
+        newValue: { itemsUpdated: items.length, allVerified },
+        moduleName: 'AUDITS'
+      }, tx);
     });
 
     res.json({ success: true, message: 'Audit checklist progress saved.' });
@@ -310,6 +329,15 @@ router.post('/discrepancies/:id/reconcile', authMiddleware, checkRole(['Admin', 
           notes: `${disc.auditAssetResult.notes || ''} Reconciled: Condition set to ${actualCondition}.`
         }
       });
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'RECONCILE_DISCREPANCY',
+        entityType: 'AuditDiscrepancy',
+        entityId: id,
+        newValue: { actualCondition, assetId: disc.assetId },
+        moduleName: 'AUDITS'
+      }, tx);
     });
 
     res.json({ success: true, message: 'Discrepancy reconciled successfully.' });

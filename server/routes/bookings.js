@@ -198,4 +198,92 @@ router.post('/:id/cancel', authMiddleware, async (req, res) => {
   }
 });
 
+// POST check-in booking (mark as ONGOING)
+router.post('/:id/checkin', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.resourceBooking.update({
+        where: { id },
+        data: { status: 'ONGOING' }
+      });
+      await logActivity({
+        userId: req.user.userId,
+        action: 'CHECKIN_BOOKING',
+        entityType: 'ResourceBooking',
+        entityId: id,
+        moduleName: 'BOOKINGS'
+      }, tx);
+    });
+    res.json({ success: true, status: 'Ongoing', message: 'Checked in successfully.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to check in.' });
+  }
+});
+
+// POST complete booking
+router.post('/:id/complete', authMiddleware, async (req, res) => {
+  const { id } = req.params;
+  try {
+    await prisma.$transaction(async (tx) => {
+      await tx.resourceBooking.update({
+        where: { id },
+        data: { status: 'COMPLETED' }
+      });
+      await logActivity({
+        userId: req.user.userId,
+        action: 'COMPLETE_BOOKING',
+        entityType: 'ResourceBooking',
+        entityId: id,
+        moduleName: 'BOOKINGS'
+      }, tx);
+    });
+    res.json({ success: true, status: 'Completed', message: 'Booking completed.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to complete booking.' });
+  }
+});
+
+// GET check resource availability for a time slot
+router.get('/availability/:resourceId', authMiddleware, async (req, res) => {
+  const { resourceId } = req.params;
+  const { startDate, endDate } = req.query;
+
+  if (!startDate || !endDate) {
+    return res.status(400).json({ error: 'startDate and endDate query params are required.' });
+  }
+
+  try {
+    const start = new Date(startDate);
+    const end = new Date(endDate);
+
+    const conflicts = await prisma.resourceBooking.findMany({
+      where: {
+        assetId: resourceId,
+        status: { not: 'CANCELLED' },
+        startTime: { lt: end },
+        endTime: { gt: start }
+      },
+      include: { bookedBy: true }
+    });
+
+    res.json({
+      available: conflicts.length === 0,
+      conflicts: conflicts.map(c => ({
+        id: c.id,
+        bookedBy: c.bookedBy.name,
+        start: c.startTime.toISOString(),
+        end: c.endTime.toISOString(),
+        status: mapStatusToFrontend(c.status)
+      }))
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to check availability.' });
+  }
+});
+
 export default router;
+

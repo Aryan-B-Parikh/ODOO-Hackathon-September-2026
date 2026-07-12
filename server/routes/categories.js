@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../db.js';
 import { authMiddleware, checkRole } from '../middleware/auth.js';
+import { logActivity } from '../utils/activity.js';
 
 const router = express.Router();
 
@@ -38,13 +39,26 @@ router.post('/', authMiddleware, checkRole(['Admin', 'Asset Manager']), async (r
       return res.status(400).json({ error: 'Category name already exists.' });
     }
 
-    const newCat = await prisma.assetCategory.create({
-      data: {
-        name,
-        description: code ? `Code: ${code}` : null,
-        customFieldSchema: customFields || [],
-        organizationId: req.user.organizationId
-      }
+    const newCat = await prisma.$transaction(async (tx) => {
+      const cat = await tx.assetCategory.create({
+        data: {
+          name,
+          description: code ? `Code: ${code}` : null,
+          customFieldSchema: customFields || [],
+          organizationId: req.user.organizationId
+        }
+      });
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'CREATE_CATEGORY',
+        entityType: 'AssetCategory',
+        entityId: cat.id,
+        newValue: { name, code },
+        moduleName: 'ADMIN'
+      }, tx);
+
+      return cat;
     });
 
     res.status(201).json({
@@ -65,13 +79,25 @@ router.put('/:id', authMiddleware, checkRole(['Admin', 'Asset Manager']), async 
   const { name, code, customFields } = req.body;
 
   try {
-    const updated = await prisma.assetCategory.update({
-      where: { id },
-      data: {
-        name,
-        description: code ? `Code: ${code}` : undefined,
-        customFieldSchema: customFields || undefined
-      }
+    const updated = await prisma.$transaction(async (tx) => {
+      const cat = await tx.assetCategory.update({
+        where: { id },
+        data: {
+          name,
+          description: code ? `Code: ${code}` : undefined,
+          customFieldSchema: customFields || undefined
+        }
+      });
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'UPDATE_CATEGORY',
+        entityType: 'AssetCategory',
+        entityId: id,
+        moduleName: 'ADMIN'
+      }, tx);
+
+      return cat;
     });
 
     res.json({
@@ -90,9 +116,19 @@ router.put('/:id', authMiddleware, checkRole(['Admin', 'Asset Manager']), async 
 router.delete('/:id', authMiddleware, checkRole(['Admin']), async (req, res) => {
   const { id } = req.params;
   try {
-    await prisma.assetCategory.update({
-      where: { id },
-      data: { isDeleted: true, deletedAt: new Date() }
+    await prisma.$transaction(async (tx) => {
+      await tx.assetCategory.update({
+        where: { id },
+        data: { isDeleted: true, deletedAt: new Date() }
+      });
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'DELETE_CATEGORY',
+        entityType: 'AssetCategory',
+        entityId: id,
+        moduleName: 'ADMIN'
+      }, tx);
     });
     res.json({ success: true, message: 'Category deleted successfully.' });
   } catch (error) {

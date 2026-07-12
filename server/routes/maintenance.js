@@ -10,14 +10,15 @@ const mapStatusToFrontend = (dbStatus) => {
   if (['PENDING', 'APPROVED', 'REJECTED'].includes(dbStatus)) return 'Backlog';
   if (['TECHNICIAN_ASSIGNED', 'IN_PROGRESS'].includes(dbStatus)) return 'In Progress';
   if (dbStatus === 'RESOLVED') return 'Review';
-  return 'Completed'; // Custom final closed status
+  if (dbStatus === 'COMPLETED') return 'Completed';
+  return 'Backlog';
 };
 
 // Helper to map frontend Kanban status to DB maintenance status
 const mapStatusToDb = (feStatus, hasTech) => {
   if (feStatus === 'In Progress') return 'IN_PROGRESS';
   if (feStatus === 'Review') return 'RESOLVED';
-  if (feStatus === 'Completed') return 'RESOLVED'; // Resolved counts as Completed in standard flow
+  if (feStatus === 'Completed') return 'COMPLETED';
   return hasTech ? 'TECHNICIAN_ASSIGNED' : 'PENDING'; // Backlog maps based on assignment
 };
 

@@ -1,63 +1,44 @@
 import React, { useContext, useState } from 'react';
 import { AppContext } from '../context/AppContext';
 
-const assignedAssets = [
-  {
-    id: 'EL-INV-5423',
-    model: 'MacBook Pro M3 Max',
-    assetCode: 'EL-INV-5423',
-    category: 'IT Equipment',
-    status: 'IN USE',
-    statusBg: 'bg-green-100 text-green-700',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuAQCEJZ_t_uWP7pTvdWsDXTxu5coFrnNC0NOoyyV40Pv24D-HML9_JJAQVdudsfcBbqhbpagRElC4FO8z5Z2y-PBL-wtWYsUGEjmFRYGujoAZYrp70dr6-K8IGzJPelNNzxWU9pJnyeDR9so7j6IGZVrW-iygliCtknMFdfveLkiSuABAyGlZpqi4uAItsfm171F9i1uWUu8fo8Aj-_1-9LeWQ69vlkxSefgN6FX-3pKiJaeXZjQD9uGb1Z3cZ7POodIaF2uW7GuHeu',
-  },
-  {
-    id: 'EL-AUD-1190',
-    model: 'Sony WH-1000XM5',
-    assetCode: 'EL-AUD-1190',
-    category: 'Peripherals',
-    status: 'IN USE',
-    statusBg: 'bg-green-100 text-green-700',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuCvcxSu8csAbk__qE1BoDdSs2YFHC6AHgmung7MxlwOHQWilTBFc6aDlZd-JgGVMDXJV9fTBQzh90C7P3W3jYGt33BzVlirlwABSCQRYHK9z07Wce2586uTfDuVpw4qhEC1oAZB9gT8uSOys3Xwiu6egSv75jnLkTHyOTUbKwiGLUaQjQbgaLkmXkT9ACgkh1HL-rUByXeDeCLJqYxmrwYuwRsmFRk2_knFT2iYWraKnfu6mWh0vEVyA-AcCj2tUvc3OoIhFNKofOKUn',
-  },
-  {
-    id: 'EL-MOB-ME',
-    model: 'Shure SM7B Mic',
-    assetCode: 'EL-MOB-ME',
-    category: 'Audio',
-    status: 'IN USE',
-    statusBg: 'bg-green-100 text-green-700',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuBweA6PiS5AXIJ8Et1UyCMN41SnB6bl3OPVNvJt6o0MY16aSSl-4BWoeSnEhQgMJ3f8GINfHKReDt4Gq8LLxhRhdR2_0kGnXML--ecDDPtn36TpIapvSz822d5XGjCj80m2yoFOrabw2lC98QaXRx5dL5icpzW4ezWVoNdJmtiMCJa3bvQS13QSdhHnl7ztDrqvCh3LFNLX6bsJuXVSMZSQyhXU23LBJMuqsdmg9NqTLzxzsa6MKzYANPi0zG-SP_D-lfqkJcrpuu3e',
-  },
-  {
-    id: 'EL-FUN-CH6',
-    model: 'Herman Miller Aeron',
-    assetCode: 'EL-FUN-CH6',
-    category: 'Furniture',
-    status: 'IN USE',
-    statusBg: 'bg-green-100 text-green-700',
-    image: 'https://lh3.googleusercontent.com/aida-public/AB6AXuD48KO0D4VAPfLXArC6JB7hwCA2eW1i6iaFcyAFcWX72joMxvJaV6sHaClw2O4RlKlqZn0FLT-9Q2YnmqdFg8rOOwmyVvLcBK-0BJkYO5XiUsdfjaWX2_I18rCLD0T-X05aW1h9fgA2zUo7t-k1pFQXz4mNQwWvErtPIxJywAXofueOfgqlryWzd_2CrKmScobDbLTa6KIal2vAIoQJeGu-8xFLrhL_CgQircS3Sz_xCIXM9_IT4bkSf3IU_oSO1PbQDH5UWNr0QjZp',
-  },
-];
 
-const activityItems = [
-  { icon: 'inventory_2', iconBg: 'bg-blue-100 text-blue-600', title: 'New Asset Registered', desc: "Added 'Logitech MX Master 3S' to department inventory.", time: 'Today, 11:32 AM' },
-  { icon: 'fact_check', iconBg: 'bg-green-100 text-green-600', title: 'Audit Completed', desc: 'Annual Q3 infrastructure audit finalized and signed.', time: 'Today, 09:45 AM' },
-  { icon: 'build', iconBg: 'bg-yellow-100 text-yellow-600', title: 'Maintenance Flagged', desc: "Reported battery issues for 'Dell XPS 15 - ID: 21258'.", time: 'Oct 18, 2023' },
-  { icon: 'manage_accounts', iconBg: 'bg-purple-100 text-purple-600', title: 'Profile Updated', desc: 'Modified contact phone number and emergency contact.', time: 'Oct 14, 2023' },
-];
 
 export default function UserProfile() {
-  const { user } = useContext(AppContext);
+  const { user, apiCall } = useContext(AppContext);
   const [showAll, setShowAll] = useState(false);
   const [imageErrors, setImageErrors] = useState({});
   const [avatarError, setAvatarError] = useState(false);
+
+  const [profileData, setProfileData] = useState(null);
+  const [assignedAssets, setAssignedAssets] = useState([]);
+  const [activityItems, setActivityItems] = useState([]);
+  const [loading, setLoading] = useState(true);
+
+  React.useEffect(() => {
+    const fetchProfile = async () => {
+      try {
+        const data = await apiCall('/employees/profile');
+        setProfileData(data.profile);
+        setAssignedAssets(data.assignedAssets);
+        setActivityItems(data.activityItems);
+      } catch (err) {
+        console.error('Failed to fetch profile', err);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchProfile();
+  }, []);
 
   const handleImageError = (id) => {
     setImageErrors((prev) => ({ ...prev, [id]: true }));
   };
 
   const displayedActivity = showAll ? activityItems : activityItems.slice(0, 3);
+  
+  if (loading) {
+    return <div className="p-8 text-center text-gray-500">Loading Profile...</div>;
+  }
 
   // Use the current user from context, fall back to Elena Vance from the stitch design
   const profileUser = {
@@ -134,25 +115,28 @@ export default function UserProfile() {
               </div>
               <div className="space-y-5">
                 <div>
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-1">Full Name</label>
-                  <p className="text-base font-medium text-on-surface">{profileUser.name}</p>
+                  <label className="block text-sm font-medium text-gray-500">Full Name</label>
+                  <p className="mt-1 text-sm text-gray-900 font-medium">{profileData?.name || user?.name || 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-1">Email Address</label>
-                  <p className="text-base font-medium text-on-surface">{profileUser.email}</p>
+                  <label className="block text-sm font-medium text-gray-500">Email Address</label>
+                  <p className="mt-1 text-sm text-gray-900 font-medium">{profileData?.email || user?.email || 'N/A'}</p>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-1">Phone Number</label>
-                  <p className="text-base font-medium text-on-surface">{profileUser.phone}</p>
+                  <label className="block text-sm font-medium text-gray-500">Phone Number</label>
+                  <p className="mt-1 text-sm text-gray-900 font-medium">{profileData?.phone || '+1 (555) 123-4567'}</p>
                 </div>
                 <div>
-                  <label className="text-[10px] font-bold text-on-surface-variant uppercase tracking-widest block mb-1">Employee ID</label>
-                  <div className="flex items-center gap-2">
-                    <span className="bg-surface-container-low px-3 py-1 rounded-lg text-primary font-mono text-sm border border-outline-variant/30">{profileUser.employeeId}</span>
-                    <button className="p-1 hover:text-primary transition-colors">
-                      <span className="material-symbols-outlined text-sm text-on-surface-variant">content_copy</span>
-                    </button>
-                  </div>
+                  <label className="block text-sm font-medium text-gray-500">Department</label>
+                  <p className="mt-1 text-sm text-gray-900 font-medium">{profileData?.department || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Manager</label>
+                  <p className="mt-1 text-sm text-gray-900 font-medium">{profileData?.manager || 'N/A'}</p>
+                </div>
+                <div>
+                  <label className="block text-sm font-medium text-gray-500">Role</label>
+                  <p className="mt-1 text-sm text-gray-900 font-medium">{profileData?.role || user?.role || 'N/A'}</p>
                 </div>
               </div>
             </div>

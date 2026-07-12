@@ -227,7 +227,7 @@ router.post('/:id/return', authMiddleware, checkRole(['Admin', 'Asset Manager'])
   try {
     const alloc = await prisma.assetAllocation.findUnique({
       where: { id },
-      include: { asset: true }
+      include: { asset: true, employee: true }
     });
 
     if (!alloc) {
@@ -387,14 +387,25 @@ router.post('/transfers/:id/action', authMiddleware, checkRole(['Admin', 'Asset 
     }
 
     if (action === 'reject') {
-      await prisma.assetTransferRequest.update({
-        where: { id },
-        data: {
-          status: 'REJECTED',
-          actionedById: req.user.employeeId,
-          actionedAt: new Date(),
-          rejectionReason: rejectReason
-        }
+      await prisma.$transaction(async (tx) => {
+        await tx.assetTransferRequest.update({
+          where: { id },
+          data: {
+            status: 'REJECTED',
+            actionedById: req.user.employeeId,
+            actionedAt: new Date(),
+            rejectionReason: rejectReason
+          }
+        });
+
+        await logActivity({
+          userId: req.user.userId,
+          action: 'REJECT_TRANSFER',
+          entityType: 'AssetTransferRequest',
+          entityId: id,
+          newValue: { reason: rejectReason },
+          moduleName: 'ALLOCATIONS'
+        }, tx);
       });
       return res.json({ success: true, message: 'Transfer request rejected.' });
     }

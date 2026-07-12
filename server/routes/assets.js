@@ -201,12 +201,11 @@ router.post('/', authMiddleware, checkRole(['Admin', 'Asset Manager']), async (r
       return res.status(400).json({ error: `Category '${category}' does not exist.` });
     }
 
-    // Resolve location
+    // Resolve location (auto-create)
     let locObj = await prisma.location.findFirst({
       where: { name: location, isDeleted: false }
     });
     if (!locObj) {
-      // Create location if not exists
       locObj = await prisma.location.create({
         data: {
           name: location,
@@ -214,6 +213,23 @@ router.post('/', authMiddleware, checkRole(['Admin', 'Asset Manager']), async (r
           organizationId: req.user.organizationId
         }
       });
+    }
+
+    // Resolve vendor (auto-create)
+    let vendorId = null;
+    if (vendor && vendor !== 'None') {
+      let vendorObj = await prisma.vendor.findFirst({
+        where: { name: vendor, isDeleted: false, organizationId: req.user.organizationId }
+      });
+      if (!vendorObj) {
+        vendorObj = await prisma.vendor.create({
+          data: {
+            name: vendor,
+            organizationId: req.user.organizationId
+          }
+        });
+      }
+      vendorId = vendorObj.id;
     }
 
     // Resolve department
@@ -243,6 +259,7 @@ router.post('/', authMiddleware, checkRole(['Admin', 'Asset Manager']), async (r
           status: mapStatusToDb(status, assignedTo && assignedTo !== 'Unassigned'),
           locationId: locObj.id,
           departmentId,
+          vendorId,
           organizationId: req.user.organizationId,
           customFieldValues: customValues || {}
         }
@@ -336,6 +353,7 @@ router.put('/:id', authMiddleware, checkRole(['Admin', 'Asset Manager']), async 
     status,
     assignedTo,
     serialNumber,
+    vendor,
     location,
     department,
     condition,
@@ -389,6 +407,27 @@ router.put('/:id', authMiddleware, checkRole(['Admin', 'Asset Manager']), async 
       }
     }
 
+    // Resolve vendor (auto-create)
+    let vendorId = undefined;
+    if (vendor !== undefined) {
+      if (vendor === 'None' || vendor === '') {
+        vendorId = null;
+      } else {
+        let vendorObj = await prisma.vendor.findFirst({
+          where: { name: vendor, isDeleted: false, organizationId: req.user.organizationId }
+        });
+        if (!vendorObj) {
+          vendorObj = await prisma.vendor.create({
+            data: {
+              name: vendor,
+              organizationId: req.user.organizationId
+            }
+          });
+        }
+        vendorId = vendorObj.id;
+      }
+    }
+
     const updated = await prisma.$transaction(async (tx) => {
       const dbAsset = await tx.asset.update({
         where: { id },
@@ -401,6 +440,7 @@ router.put('/:id', authMiddleware, checkRole(['Admin', 'Asset Manager']), async 
           status: status ? mapStatusToDb(status, assignedTo && assignedTo !== 'Unassigned') : undefined,
           locationId,
           departmentId,
+          vendorId,
           customFieldValues: customValues || undefined
         }
       });
@@ -533,12 +573,17 @@ router.post('/:id/upload', authMiddleware, checkRole(['Admin', 'Asset Manager'])
       const photoFiles    = req.files?.photos    || [];
       const documentFiles = req.files?.documents || [];
 
-      // Build public URL paths (served via /uploads static route)
-      const BASE_URL = process.env.BASE_URL || 'http://localhost:5050';
+      // S3 returns `location`, local multer uses `filename`
+      const getFileUrl = (f) => {
+        if (f.location) return f.location; // S3
+        const BASE_URL = process.env.BASE_URL || 'http://localhost:5050';
+        const prefix = f.mimetype.startsWith('image/') ? 'photos' : 'documents';
+        return `${BASE_URL}/uploads/${prefix}/${f.filename}`;
+      };
 
       const photoRecords = photoFiles.map(f => ({
         assetId: id,
-        url: `${BASE_URL}/uploads/photos/${f.filename}`,
+        url: getFileUrl(f),
         fileName: f.originalname,
         mimeType: f.mimetype
       }));
@@ -546,7 +591,7 @@ router.post('/:id/upload', authMiddleware, checkRole(['Admin', 'Asset Manager'])
       const docRecords = documentFiles.map(f => ({
         assetId: id,
         name: f.originalname,
-        url: `${BASE_URL}/uploads/documents/${f.filename}`,
+        url: getFileUrl(f),
         mimeType: f.mimetype
       }));
 
@@ -570,6 +615,96 @@ router.post('/:id/upload', authMiddleware, checkRole(['Admin', 'Asset Manager'])
       res.status(500).json({ error: 'Failed to persist uploaded files.' });
     }
   });
+});
+
+// POST bulk actions on assets (delete, status update)
+router.post('/bulk-action', authMiddleware, checkRole(['Admin', 'Asset Manager']), async (req, res) => {
+  const { action, assetIds, newStatus } = req.body;
+
+  if (!assetIds || !Array.isArray(assetIds) || assetIds.length === 0) {
+    return res.status(400).json({ error: 'assetIds array is required.' });
+  }
+
+  try {
+    if (action === 'delete') {
+      await prisma.$transaction(async (tx) => {
+        await tx.asset.updateMany({
+          where: { id: { in: assetIds } },
+          data: { isDeleted: true, deletedAt: new Date() }
+        });
+
+        await logActivity({
+          userId: req.user.userId,
+          action: 'BULK_DELETE_ASSETS',
+          entityType: 'Asset',
+          entityId: assetIds.join(','),
+          newValue: { count: assetIds.length },
+          moduleName: 'ASSETS'
+        }, tx);
+      });
+
+      return res.json({ success: true, message: `${assetIds.length} assets deleted.` });
+    }
+
+    if (action === 'status' && newStatus) {
+      const dbStatus = mapStatusToDb(newStatus, false);
+
+      await prisma.$transaction(async (tx) => {
+        await tx.asset.updateMany({
+          where: { id: { in: assetIds } },
+          data: { status: dbStatus }
+        });
+
+        await logActivity({
+          userId: req.user.userId,
+          action: 'BULK_STATUS_UPDATE',
+          entityType: 'Asset',
+          entityId: assetIds.join(','),
+          newValue: { status: newStatus, count: assetIds.length },
+          moduleName: 'ASSETS'
+        }, tx);
+      });
+
+      return res.json({ success: true, message: `${assetIds.length} assets updated to ${newStatus}.` });
+    }
+
+    if (action === 'export') {
+      const assets = await prisma.asset.findMany({
+        where: { id: { in: assetIds }, isDeleted: false },
+        include: {
+          category: true,
+          location: true,
+          department: true,
+          vendor: true,
+          allocations: {
+            where: { status: 'ACTIVE' },
+            include: { employee: true }
+          }
+        }
+      });
+
+      const csvRows = assets.map(a => ({
+        Name: a.name,
+        Category: a.category.name,
+        AssetTag: a.assetTag,
+        SerialNumber: a.serialNumber || '',
+        Status: a.status,
+        Location: a.location.name,
+        Department: a.department?.name || '',
+        Vendor: a.vendor?.name || '',
+        AssignedTo: a.allocations[0]?.employee?.name || 'Unassigned',
+        PurchaseCost: a.acquisitionCost?.toString() || '0.00',
+        PurchaseDate: a.acquisitionDate?.toISOString().split('T')[0] || ''
+      }));
+
+      return res.json({ success: true, data: csvRows });
+    }
+
+    res.status(400).json({ error: 'Invalid action. Use: delete, status, or export.' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Bulk action failed.' });
+  }
 });
 
 export default router;

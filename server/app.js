@@ -15,6 +15,7 @@ import auditsRouter from './routes/audits.js';
 import dashboardRouter from './routes/dashboard.js';
 import notificationsRouter from './routes/notifications.js';
 import reportsRouter from './routes/reports.js';
+import organizationRouter from './routes/organization.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -41,6 +42,7 @@ app.use('/api/audits', auditsRouter);
 app.use('/api/dashboard', dashboardRouter);
 app.use('/api/notifications', notificationsRouter);
 app.use('/api/reports', reportsRouter);
+app.use('/api/organization', organizationRouter);
 
 // Basic Health Check
 app.get('/api/health', (req, res) => {

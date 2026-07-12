@@ -3,6 +3,7 @@ import bcrypt from 'bcryptjs';
 import prisma from '../db.js';
 import { authMiddleware, checkRole } from '../middleware/auth.js';
 import { sendAdminPromotionEmail } from '../mailer.js';
+import { logActivity } from '../utils/activity.js';
 
 const router = express.Router();
 
@@ -39,6 +40,80 @@ router.get('/', authMiddleware, async (req, res) => {
   } catch (error) {
     console.error(error);
     res.status(500).json({ error: 'Failed to retrieve employees.' });
+  }
+});
+
+// GET logged-in employee profile
+router.get('/profile', authMiddleware, async (req, res) => {
+  try {
+    const employee = await prisma.employee.findUnique({
+      where: { id: req.user.employeeId },
+      include: {
+        department: true,
+        manager: true,
+        user: {
+          include: {
+            userRoles: { include: { role: true } }
+          }
+        },
+        allocations: {
+          where: { status: 'ACTIVE', isDeleted: false },
+          include: {
+            asset: {
+              include: { category: true, images: true }
+            }
+          }
+        }
+      }
+    });
+
+    if (!employee) {
+      return res.status(404).json({ error: 'Profile not found.' });
+    }
+
+    const activities = await prisma.activityLog.findMany({
+      where: { userId: req.user.userId },
+      orderBy: { createdAt: 'desc' },
+      take: 10
+    });
+
+    const assignedAssets = employee.allocations.map(alloc => {
+      const asset = alloc.asset;
+      return {
+        id: asset.id,
+        model: asset.name,
+        assetCode: asset.assetTag || asset.id,
+        category: asset.category.name,
+        status: 'IN USE',
+        statusBg: 'bg-green-100 text-green-700',
+        image: asset.images[0]?.url || 'https://via.placeholder.com/150'
+      };
+    });
+
+    const activityItems = activities.map(act => ({
+      icon: act.action.includes('ASSET') ? 'inventory_2' : (act.action.includes('MAINTENANCE') ? 'build' : 'fact_check'),
+      iconBg: 'bg-blue-100 text-blue-600',
+      title: act.action.replace(/_/g, ' '),
+      desc: act.entityType + ' ' + act.entityId,
+      time: act.createdAt.toISOString()
+    }));
+
+    res.json({
+      profile: {
+        name: employee.name,
+        email: employee.email,
+        phone: employee.phone || '',
+        status: employee.status === 'ACTIVE' ? 'Active' : 'Inactive',
+        role: employee.user?.userRoles[0]?.role.name || 'Employee',
+        department: employee.department ? employee.department.name : 'None',
+        manager: employee.manager ? employee.manager.name : 'None',
+      },
+      assignedAssets,
+      activityItems
+    });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Failed to retrieve profile.' });
   }
 });
 
@@ -117,6 +192,15 @@ router.post('/', authMiddleware, checkRole(['Admin']), async (req, res) => {
           roleId: dbRole.id
         }
       });
+
+      await logActivity({
+        userId: newUser.id,
+        action: 'CREATE_EMPLOYEE',
+        entityType: 'Employee',
+        entityId: newEmp.id,
+        newValue: { name, email, role: selectedRole },
+        moduleName: 'ADMIN'
+      }, tx);
 
       return newEmp;
     });

@@ -1,6 +1,7 @@
 import express from 'express';
 import prisma from '../db.js';
 import { authMiddleware, checkRole } from '../middleware/auth.js';
+import { logActivity } from '../utils/activity.js';
 
 const router = express.Router();
 
@@ -63,15 +64,28 @@ router.post('/', authMiddleware, checkRole(['Admin', 'Asset Manager']), async (r
       if (managerObj) headId = managerObj.id;
     }
 
-    const newDept = await prisma.department.create({
-      data: {
-        name,
-        code,
-        status: status === 'Inactive' ? 'INACTIVE' : 'ACTIVE',
-        parentId,
-        headId,
-        organizationId: req.user.organizationId
-      }
+    const newDept = await prisma.$transaction(async (tx) => {
+      const dept = await tx.department.create({
+        data: {
+          name,
+          code,
+          status: status === 'Inactive' ? 'INACTIVE' : 'ACTIVE',
+          parentId,
+          headId,
+          organizationId: req.user.organizationId
+        }
+      });
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'CREATE_DEPARTMENT',
+        entityType: 'Department',
+        entityId: dept.id,
+        newValue: { name, code },
+        moduleName: 'ADMIN'
+      }, tx);
+
+      return dept;
     });
 
     res.status(201).json({
@@ -118,15 +132,27 @@ router.put('/:id', authMiddleware, checkRole(['Admin', 'Asset Manager']), async 
       }
     }
 
-    const updated = await prisma.department.update({
-      where: { id },
-      data: {
-        name,
-        code,
-        status: status ? (status === 'Inactive' ? 'INACTIVE' : 'ACTIVE') : undefined,
-        parentId,
-        headId
-      }
+    const updated = await prisma.$transaction(async (tx) => {
+      const dept = await tx.department.update({
+        where: { id },
+        data: {
+          name,
+          code,
+          status: status ? (status === 'Inactive' ? 'INACTIVE' : 'ACTIVE') : undefined,
+          parentId,
+          headId
+        }
+      });
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'UPDATE_DEPARTMENT',
+        entityType: 'Department',
+        entityId: id,
+        moduleName: 'ADMIN'
+      }, tx);
+
+      return dept;
     });
 
     res.json({
@@ -147,9 +173,19 @@ router.put('/:id', authMiddleware, checkRole(['Admin', 'Asset Manager']), async 
 router.delete('/:id', authMiddleware, checkRole(['Admin']), async (req, res) => {
   const { id } = req.params;
   try {
-    await prisma.department.update({
-      where: { id },
-      data: { isDeleted: true, deletedAt: new Date() }
+    await prisma.$transaction(async (tx) => {
+      await tx.department.update({
+        where: { id },
+        data: { isDeleted: true, deletedAt: new Date() }
+      });
+
+      await logActivity({
+        userId: req.user.userId,
+        action: 'DELETE_DEPARTMENT',
+        entityType: 'Department',
+        entityId: id,
+        moduleName: 'ADMIN'
+      }, tx);
     });
     res.json({ success: true, message: 'Department deleted successfully.' });
   } catch (error) {
