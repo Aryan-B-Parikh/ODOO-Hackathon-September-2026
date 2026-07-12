@@ -7,7 +7,7 @@
  * Responsibility:
  * The main application shell (Sidebar, Header, Main Content Area).
  */
-import { Outlet } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 
 export function AppLayout() {
   return (
@@ -20,7 +20,12 @@ export function AppLayout() {
       <div className="flex flex-1">
         {/* Sidebar Placeholder */}
         <aside className="w-64 border-r p-4 hidden md:block">
-          <nav>Navigation Placeholder</nav>
+          <nav className="space-y-2 flex flex-col">
+            <Link to="/app/dashboard" className="p-2 hover:bg-slate-100 rounded">Dashboard</Link>
+            <Link to="/app/departments" className="p-2 hover:bg-slate-100 rounded">Departments</Link>
+            <Link to="/app/employees" className="p-2 hover:bg-slate-100 rounded">Employees</Link>
+            <Link to="/categories" className="p-2 hover:bg-slate-100 rounded">Asset Categories</Link>
+          </nav>
         </aside>
         
         {/* Main Content */}

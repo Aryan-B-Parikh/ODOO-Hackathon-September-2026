@@ -15,12 +15,21 @@ import express from 'express';
 import helmet from 'helmet';
 
 import { Config } from '../config/index.js';
+import { container } from '../core/container.js';
 import { httpLogger } from '../core/logger.js';
 
+import { requireAuth } from './middleware/auth.middleware.js';
 import { globalErrorHandler, NotFoundError } from './middleware/error-handler.js';
 import { requestIdMiddleware } from './middleware/request-id.js';
-import { authRouter } from './routes/auth.routes.js';
-import { healthRouter } from './routes/health.js';
+import { createAllocationRouter } from './routes/allocation.routes.js';
+import { createAssetRoutes } from './routes/asset.routes.js';
+import { authRouter as authRoutes } from './routes/auth.routes.js';
+import { createCategoryRoutes } from './routes/category.routes.js';
+import { departmentRoutes } from './routes/department.routes.js';
+import { employeeRoutes } from './routes/employee.routes.js';
+import { healthRouter as healthRoutes } from './routes/health.js';
+import { createMaintenanceRouter } from './routes/maintenance.routes.js';
+import { createTransferRouter } from './routes/transfer.routes.js';
 
 
 export const app = express();
@@ -44,11 +53,23 @@ app.use(cookieParser());
 // 6. Request Logging
 app.use(httpLogger);
 
-// 7. Health Routes (Bypass Auth)
-app.use('/health', healthRouter);
+// 7. API Routes
+app.use('/api/v1/health', healthRoutes);
+app.use('/api/v1/auth', authRoutes);
+app.use('/api/v1/departments', departmentRoutes);
+app.use('/api/v1/employees', employeeRoutes);
+app.use('/api/v1/categories', createCategoryRoutes(container.categoryController));
+app.use('/api/v1/assets', createAssetRoutes(container.assetController));
+app.use('/api/v1/allocations', createAllocationRouter(container.allocationController));
+app.use('/api/v1/transfers', createTransferRouter(container.transferController));
+app.use('/api/v1/maintenance', createMaintenanceRouter(container.maintenanceController));
 
-// 8. Auth Routes
-app.use('/api/v1/auth', authRouter);
+// History routes mounted directly since they span bounded contexts
+app.get('/api/v1/assets/:id/allocation-history', requireAuth, container.allocationController.getAssetHistory);
+app.get('/api/v1/employees/:id/allocation-history', requireAuth, container.allocationController.getEmployeeHistory);
+app.get('/api/v1/assets/:id/transfers', requireAuth, container.transferController.getByAsset);
+app.get('/api/v1/employees/:id/transfers', requireAuth, container.transferController.getByEmployee);
+app.get('/api/v1/assets/:id/maintenance', requireAuth, container.maintenanceController.getByAsset);
 
 // 9. 404 Handler for unmatched routes
 app.use('*', (req, res, next) => {
